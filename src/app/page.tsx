@@ -1,140 +1,189 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  TrendingUp
+  TrendingUp,
+  BarChart3,
+  Brain,
+  Target,
+  ArrowRight
 } from 'lucide-react';
 
-export default function MinimalHomePage() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
+export default function ModernLandingPage() {
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-100'} transition-colors duration-500`}>
-      {/* Main Content */}
-      <div className="flex h-screen">
-        {/* Left Side - App Hero */}
-        <div className="flex-1 flex items-center justify-center relative overflow-hidden">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}></div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-blue-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
+      </div>
 
-          {/* Trading Chart Visualization */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-10">
-            <svg className="w-2/3 h-2/3" viewBox="0 0 400 300" fill="none">
-              <defs>
-                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8"/>
-                  <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.6"/>
-                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8"/>
-                </linearGradient>
-              </defs>
-              <path
-                d="M50,200 Q100,150 150,180 T250,120 Q300,100 350,140"
-                stroke="url(#chartGradient)"
-                strokeWidth="3"
-                fill="none"
-                className="animate-pulse"
-              />
-              <path
-                d="M50,220 Q100,170 150,200 T250,140 Q300,120 350,160"
-                stroke="url(#chartGradient)"
-                strokeWidth="2"
-                fill="none"
-                opacity="0.5"
-                className="animate-pulse"
-                style={{ animationDelay: '1s' }}
-              />
-            </svg>
-          </div>
+      {/* Subtle grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
 
-          {/* Floating Trading Icons */}
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 opacity-20">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center transform rotate-12 animate-pulse">
-                <TrendingUp className="h-8 w-8 text-white" />
+      {/* Navigation */}
+      <nav className="relative z-50 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500/20 rounded-xl blur-lg" />
+              <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl">
+                <TrendingUp className="h-6 w-6 text-white" />
               </div>
             </div>
-            <div className="absolute top-1/3 right-1/3 opacity-15">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-cyan-500 rounded-xl flex items-center justify-center transform -rotate-6 animate-pulse" style={{ animationDelay: '2s' }}>
-                <span className="text-white font-bold">$</span>
-              </div>
-            </div>
-            <div className="absolute bottom-1/3 left-1/3 opacity-10">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl flex items-center justify-center transform rotate-45 animate-pulse" style={{ animationDelay: '3s' }}>
-                <span className="text-white font-bold text-lg">📈</span>
-              </div>
-            </div>
+            <span className="text-xl font-bold text-white tracking-tight">FX Journal</span>
           </div>
+          
+          <Link href="/login">
+            <button className="px-6 py-2.5 bg-white/10 hover:bg-white/15 backdrop-blur-sm text-white rounded-xl font-medium transition-all duration-300 border border-white/10 hover:border-white/20">
+              Sign In
+            </button>
+          </Link>
+        </div>
+      </nav>
 
-          {/* Main Content */}
-          <div className="relative z-10 text-center max-w-2xl px-8">
-            <div className="mb-8">
-              <div className="flex items-center justify-center mb-6">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-xl animate-pulse scale-150"></div>
-                  <TrendingUp className="relative h-20 w-20 text-blue-500" />
+      {/* Hero Section */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-32">
+        <div className="text-center max-w-4xl mx-auto">
+          {/* Main Headline */}
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-white mb-6 tracking-tight leading-none">
+            Trade Smarter,
+            <br />
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              Grow Faster
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Professional-grade trade journaling and analytics platform. Track every trade, analyze performance, and master your trading psychology.
+          </p>
+
+          {/* CTA */}
+          <Link href="/login">
+            <button className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 text-white rounded-xl font-semibold text-lg transition-all duration-300 hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105">
+              <span className="relative z-10 flex items-center gap-2">
+                Get Started
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+          </Link>
+        </div>
+
+        {/* Feature Cards */}
+        <div className="grid md:grid-cols-3 gap-6 mt-32 max-w-6xl mx-auto">
+          {[
+            {
+              icon: BarChart3,
+              title: 'Advanced Analytics',
+              description: 'Deep insights into your trading performance with comprehensive metrics and visualizations.',
+              gradient: 'from-blue-500 to-cyan-500'
+            },
+            {
+              icon: Brain,
+              title: 'Psychology Tracking',
+              description: 'Monitor your emotional state and market sentiment to improve decision-making.',
+              gradient: 'from-purple-500 to-pink-500'
+            },
+            {
+              icon: Target,
+              title: 'Performance Metrics',
+              description: 'Track win rates, profit factors, and risk-reward ratios across all your trades.',
+              gradient: 'from-emerald-500 to-teal-500'
+            }
+          ].map((feature, index) => (
+            <div
+              key={index}
+              className="group relative p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl hover:bg-white/10 transition-all duration-300 hover:scale-105"
+            >
+              <div className={`inline-flex p-3 bg-gradient-to-br ${feature.gradient} rounded-xl mb-4 shadow-lg`}>
+                <feature.icon className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+              
+              {/* Hover effect */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`} />
+            </div>
+          ))}
+        </div>
+
+        {/* Visual Dashboard Preview */}
+        <div className="mt-32 relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent z-10 pointer-events-none" />
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+            {/* Mock Dashboard */}
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="h-8 w-32 bg-white/10 rounded-lg animate-pulse" />
+                <div className="flex gap-2">
+                  <div className="h-8 w-8 bg-white/10 rounded-lg animate-pulse" />
+                  <div className="h-8 w-8 bg-white/10 rounded-lg animate-pulse" style={{ animationDelay: '0.2s' }} />
                 </div>
               </div>
               
-              <h1 className={`text-7xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>
-              FX - Journal
-               
-              </h1>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <div className="h-4 w-20 bg-white/10 rounded mb-3 animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+                    <div className="h-8 w-24 bg-white/10 rounded animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/5 p-6 rounded-xl border border-white/10 h-64">
+                <div className="h-full flex items-end justify-around gap-2">
+                  {[...Array(12)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-gradient-to-t from-blue-500/50 to-purple-500/50 rounded-t animate-pulse w-full"
+                      style={{
+                        height: `${Math.random() * 80 + 20}%`,
+                        animationDelay: `${i * 0.1}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-
-            <p className={`text-2xl mb-12 font-light ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} max-w-xl mx-auto leading-relaxed`}>
-              Master your trades. Analyze your performance. 
-              <span className="block mt-2">Elevate your trading game.</span>
-            </p>
-
-            <Link href="/login">
-              <button className="w-80 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white px-12 py-5 rounded-2xl font-semibold text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl backdrop-blur-sm">
-                Sign In
-              </button>
-            </Link>
           </div>
         </div>
 
-        {/* Right Side - Decorative Element */}
-        <div className="w-96 relative overflow-hidden">
-          {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-cyan-500/20"></div>
-          
-          {/* Abstract Trading Visualization */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative">
-              {/* Animated Rings */}
-              <div className="absolute inset-0 w-64 h-64 rounded-full border-2 border-blue-500/30 animate-spin" style={{ animationDuration: '20s' }}></div>
-              <div className="absolute inset-4 w-56 h-56 rounded-full border-2 border-purple-500/20 animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }}></div>
-              <div className="absolute inset-8 w-48 h-48 rounded-full border-2 border-cyan-500/25 animate-spin" style={{ animationDuration: '10s' }}></div>
-              
-              {/* Center Glow */}
-              <div className="absolute inset-24 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse blur-sm"></div>
-              <div className="absolute inset-28 w-8 h-8 bg-white rounded-full animate-ping"></div>
-            </div>
-          </div>
-
-          {/* Floating Data Points */}
-          <div className="absolute inset-0">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className={`absolute w-2 h-2 ${isDarkMode ? 'bg-white/40' : 'bg-gray-800/40'} rounded-full animate-pulse`}
-                style={{
-                  left: `${20 + (i * 10)}%`,
-                  top: `${30 + Math.sin(i) * 40}%`,
-                  animationDelay: `${i * 0.5}s`,
-                  animationDuration: `${2 + (i % 3)}s`
-                }}
-              />
-            ))}
-          </div>
+        {/* Final CTA */}
+        <div className="mt-32 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Ready to transform your trading?
+          </h2>
+          <p className="text-xl text-slate-400 mb-8">
+            Start journaling your trades and unlock insights that drive better performance.
+          </p>
+          <Link href="/login">
+            <button className="group px-8 py-4 bg-white text-slate-900 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(255,255,255,0.3)]">
+              <span className="flex items-center gap-2">
+                Start Trading Smarter
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </button>
+          </Link>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/10 mt-32">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-white font-semibold">FX Journal</span>
+            </div>
+            <p className="text-slate-500 text-sm">
+              © 2025 FX Journal. Professional trading analytics platform.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
