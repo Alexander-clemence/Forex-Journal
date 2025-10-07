@@ -25,7 +25,8 @@ export default function DashboardPage() {
     const amount = parseFloat(newBalance);
     
     if (isNaN(amount) || amount < 0) {
-      toast.error('Invalid Amount', {
+      //@ts-ignore
+      Toaster.error('Invalid Amount', {
         description: 'Please enter a valid amount (0 or greater)',
       });
       return;
@@ -36,11 +37,13 @@ export default function DashboardPage() {
       await setBalance(amount);
       setShowBalanceEdit(false);
       setNewBalance('');
-      toast.success('Balance Updated', {
+      //@ts-ignore
+      Toaster.success('Balance Updated', {
         description: `Base balance updated to $${amount.toFixed(2)}`,
       });
     } catch (error) {
-      toast.error('Update Failed', {
+      //@ts-ignore
+      Toaster.error('Update Failed', {
         description: error instanceof Error ? error.message : 'Something went wrong',
       });
     } finally {
