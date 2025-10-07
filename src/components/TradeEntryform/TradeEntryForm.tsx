@@ -138,7 +138,7 @@ function calculateTradePnL(
 }
 
 // ============================================================================
-// SMART LOT SIZE INPUT COMPONENT
+// SMART LOT SIZE INPUT COMPONENT - Simplified (No Type Selector)
 // ============================================================================
 
 interface SmartLotSizeInputProps {
@@ -155,101 +155,79 @@ const SmartLotSizeInput: React.FC<SmartLotSizeInputProps> = ({
   disabled = false 
 }) => {
   const [displayValue, setDisplayValue] = useState('');
-  const [lotType, setLotType] = useState<'micro' | 'mini' | 'standard'>('standard');
+  
+  // Automatically determine the best lot type for current quantity
+  const currentLotType = useMemo(() => {
+    return detectOptimalLotType(quantity);
+  }, [quantity]);
   
   // Initialize display value based on current quantity
   useEffect(() => {
     if (quantity > 0) {
-      const optimal = detectOptimalLotType(quantity);
-      setLotType(optimal);
-      const lots = quantity / getLotMultiplier(optimal);
+      const lots = quantity / getLotMultiplier(currentLotType);
       setDisplayValue(lots.toFixed(2));
     } else {
       setDisplayValue('');
     }
-  }, [quantity]);
+  }, [quantity, currentLotType]);
 
   const handleLotChange = (value: string) => {
     setDisplayValue(value);
     const lots = parseFloat(value);
     
     if (!isNaN(lots) && lots >= 0) {
-      const units = lots * getLotMultiplier(lotType);
+      // Always use standard lots (100,000 units) as the base
+      const units = lots * 100000;
       onChange(units);
     } else if (value === '' || value === '0') {
       onChange(0);
     }
   };
 
-  const handleTypeChange = (newType: 'micro' | 'mini' | 'standard') => {
-    // Keep the same units, just change how we display it
-    const currentUnits = parseFloat(displayValue || '0') * getLotMultiplier(lotType);
-    setLotType(newType);
-    const newDisplayLots = currentUnits / getLotMultiplier(newType);
-    setDisplayValue(newDisplayLots > 0 ? newDisplayLots.toFixed(2) : '');
-  };
-
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="lotSize" className="text-xs font-semibold">
-            Position Size
-          </Label>
-          <Input
-            id="lotSize"
-            type="number"
-            step="0.01"
-            min="0"
-            value={displayValue}
-            onChange={(e) => handleLotChange(e.target.value)}
-            placeholder="0.01"
-            className="h-10 font-semibold"
-            disabled={disabled}
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label className="text-xs font-semibold">Lot Type</Label>
-          <Select value={lotType} onValueChange={handleTypeChange} disabled={disabled}>
-            <SelectTrigger className="h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="micro">Micro</SelectItem>
-              <SelectItem value="mini">Mini</SelectItem>
-              <SelectItem value="standard">Standard</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="lotSize" className="text-sm font-semibold">
+          Lot Size
+        </Label>
+        <Input
+          id="lotSize"
+          type="number"
+          step="0.01"
+          min="0"
+          value={displayValue}
+          onChange={(e) => handleLotChange(e.target.value)}
+          placeholder="0.01"
+          className="h-10 font-semibold text-base"
+          disabled={disabled}
+        />
+        <p className="text-xs text-gray-500">
+          Enter lot size (e.g., 0.01, 0.1, 1.0)
+        </p>
       </div>
       
       {/* Total units display */}
-      <div className="p-2 bg-white dark:bg-gray-800 border rounded-md">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-600">Total Units:</span>
-          <span className="font-semibold text-sm">{quantity.toLocaleString()}</span>
+      <div className="p-3 bg-white dark:bg-gray-800 border rounded-md">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-gray-600 font-medium">Position Size:</span>
+          <span className="font-bold text-base">{quantity.toLocaleString()} units</span>
         </div>
-      </div>
-      
-      {/* Quick conversion reference */}
-      <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs border border-blue-200 dark:border-blue-800">
-        <div className="flex items-center gap-1 mb-1">
-          <Info className="h-3 w-3 text-blue-600" />
-          <span className="font-medium text-blue-700 dark:text-blue-300">All Formats:</span>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-gray-700 dark:text-gray-300">
-          <div className="text-center">
-            <div className="font-medium">{(quantity / 1000).toFixed(2)}</div>
-            <div className="text-[10px] text-gray-500">Micro</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">{(quantity / 10000).toFixed(2)}</div>
-            <div className="text-[10px] text-gray-500">Mini</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">{(quantity / 100000).toFixed(2)}</div>
-            <div className="text-[10px] text-gray-500">Standard</div>
+        
+        {/* Quick conversion reference - Read-only, just for info */}
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-500">
+            <div className="text-center">
+              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 1000).toFixed(2)}</div>
+              <div>micro lots</div>
+            </div>
+            <div className="text-center">
+              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 10000).toFixed(2)}</div>
+              <div>mini lots</div>
+            </div>
+            <div className="text-center">
+              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 100000).toFixed(2)}</div>
+              <div>standard lots</div>
+            </div>
           </div>
         </div>
       </div>
@@ -534,8 +512,13 @@ export function TradeEntryForm({ onSubmit, onCancel, initialData, isLoading = fa
     if (riskMetrics && riskMetrics.suggestedLotSize > 0) {
       const suggestedUnits = riskMetrics.suggestedLotSize * 100000;
       handleInputChange('quantity', suggestedUnits);
+      
+      // Determine optimal lot type for display
+      const optimalType = detectOptimalLotType(suggestedUnits);
+      const displayLots = suggestedUnits / getLotMultiplier(optimalType);
+      
       toast.success('Position Updated', {
-        description: `Position set to ${(suggestedUnits / 100000).toFixed(2)} standard lots (${suggestedUnits.toFixed(0)} units)`
+        description: `Position set to ${displayLots.toFixed(2)} ${optimalType} lots (${suggestedUnits.toFixed(0)} units)`
       });
     }
   }, [riskMetrics, handleInputChange]);
@@ -852,9 +835,9 @@ export function TradeEntryForm({ onSubmit, onCancel, initialData, isLoading = fa
                               </div>
                             ) : (
                               <>
-                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div className="space-y-3 mb-3">
                                   <div className="space-y-2">
-                                    <Label htmlFor="riskPercent" className="text-xs">Target Risk %</Label>
+                                    <Label htmlFor="riskPercent" className="text-xs font-semibold">Target Risk %</Label>
                                     <Input 
                                       id="riskPercent" 
                                       type="number" 
@@ -863,36 +846,50 @@ export function TradeEntryForm({ onSubmit, onCancel, initialData, isLoading = fa
                                       max="10"
                                       value={riskPercentInput} 
                                       onChange={(e) => setRiskPercentInput(e.target.value)} 
-                                      className="h-9" 
+                                      className="h-10" 
                                     />
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-xs">Suggested Lots</Label>
-                                    <div className="h-9 flex items-center px-3 bg-white dark:bg-gray-800 border rounded-md">
-                                      <span className="font-semibold">
-                                        {riskMetrics ? (riskMetrics.suggestedLotSize / 100000).toFixed(2) : '0.00'}
-                                      </span>
-                                    </div>
-                                  </div>
                                 </div>
-                                {riskMetrics && (
+                                {riskMetrics && riskMetrics.suggestedLotSize > 0 && (
                                   <>
-                                    <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-                                      <div>
-                                        <span className="text-gray-600">Suggested Units:</span>
-                                        <p className="font-semibold">{(riskMetrics.suggestedLotSize * 100000).toFixed(0)}</p>
+                                    <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border mb-3">
+                                      <Label className="text-xs font-semibold mb-2 block">Suggested Position</Label>
+                                      <div className="grid grid-cols-3 gap-2 text-center mb-2">
+                                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                          <div className="text-xs text-gray-500">Micro</div>
+                                          <div className="font-bold text-sm">
+                                            {((riskMetrics.suggestedLotSize * 100000) / 1000).toFixed(2)}
+                                          </div>
+                                        </div>
+                                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                          <div className="text-xs text-gray-500">Mini</div>
+                                          <div className="font-bold text-sm">
+                                            {((riskMetrics.suggestedLotSize * 100000) / 10000).toFixed(2)}
+                                          </div>
+                                        </div>
+                                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                                          <div className="text-xs text-gray-500">Standard</div>
+                                          <div className="font-bold text-sm">
+                                            {riskMetrics.suggestedLotSize.toFixed(2)}
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <span className="text-gray-600">Risk Amount:</span>
-                                        <p className="font-semibold text-red-600">${(currentBalance! * (parseFloat(riskPercentInput) || 0) / 100).toFixed(2)}</p>
+                                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <span className="text-gray-500">Total Units:</span>
+                                          <p className="font-semibold">{(riskMetrics.suggestedLotSize * 100000).toFixed(0)}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500">Risk Amount:</span>
+                                          <p className="font-semibold text-red-600">${(currentBalance! * (parseFloat(riskPercentInput) || 0) / 100).toFixed(2)}</p>
+                                        </div>
                                       </div>
                                     </div>
                                     <Button 
                                       type="button" 
                                       onClick={handleUseSuggested} 
-                                      className="w-full" 
+                                      className="w-full bg-blue-600 hover:bg-blue-700" 
                                       size="sm"
-                                      disabled={!riskMetrics.suggestedLotSize || riskMetrics.suggestedLotSize <= 0}
                                     >
                                       Apply Suggested Position
                                     </Button>
