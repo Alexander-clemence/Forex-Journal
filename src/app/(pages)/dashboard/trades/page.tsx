@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, lazy, Suspense, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,10 +10,8 @@ import { Plus, Search, Filter, Download, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { TradeFilters as TradeFilterType } from '@/lib/types/trades';
 import { Trade } from '@/lib/types/trades';
-
-// Lazy load heavy components
-const TradeFilters = lazy(() => import('@/app/components/trades/TradeFilters').then(mod => ({ default: mod.TradeFilters })));
-const TradeCard = lazy(() => import('@/app/components/trades/TradeCard').then(mod => ({ default: mod.TradeCard })));
+import { TradeFilters } from '@/components/trades/TradeFilters';
+import { TradeCard } from '@/components/trades/TradeCard';
 
 // Memoized loading skeleton
 const TradeCardSkeleton = memo(() => (
@@ -64,6 +62,7 @@ export default function TradesPage() {
   
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  //@ts-ignore
   const debounceTimerRef = useRef<NodeJS.Timeout>();
 
   // Debounce search input
@@ -290,9 +289,7 @@ export default function TradesPage() {
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t">
-              <Suspense fallback={<div className="h-20 animate-pulse bg-gray-100 dark:bg-gray-800 rounded"></div>}>
-                <TradeFilters filters={filters} onFiltersChange={setFilters} />
-              </Suspense>
+              <TradeFilters filters={filters} onFiltersChange={setFilters} />
             </div>
           )}
         </CardContent>
@@ -320,12 +317,11 @@ export default function TradesPage() {
         ) : (
           <>
             {visibleTrades.map((trade) => (
-              <Suspense key={trade.id} fallback={<TradeCardSkeleton />}>
-                <TradeCard 
-                  trade={trade} 
-                  onTradeDeleted={handleTradeDeleted}
-                />
-              </Suspense>
+              <TradeCard 
+                key={trade.id}
+                trade={trade} 
+                onTradeDeleted={handleTradeDeleted}
+              />
             ))}
             
             {/* Intersection observer trigger */}

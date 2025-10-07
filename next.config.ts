@@ -1,11 +1,22 @@
 import type { NextConfig } from "next";
 
+// Only export static files when building for Electron production
+const isElectronBuild = process.env.ELECTRON_BUILD === 'true';
+
 const nextConfig: NextConfig = {
-  output: 'export',
-  distDir: 'out',
+  // Conditionally enable static export ONLY for Electron builds
+  ...(isElectronBuild ? {
+    output: 'export',
+    distDir: 'out',
+    assetPrefix: '',
+  } : {}),
+  
   trailingSlash: true,
-  assetPrefix: '', // Remove the '/' - let Next.js use relative paths
-  images: { unoptimized: true },
+  
+  images: { 
+    unoptimized: true 
+  },
+  
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -17,9 +28,14 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_GITHUB_REPO: process.env.NEXT_PUBLIC_GITHUB_REPO,
     NEXT_PUBLIC_UPDATE_SERVER_URL: process.env.NEXT_PUBLIC_UPDATE_SERVER_URL,
   },
+  
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.output.publicPath = '/_next/';
+      // Only set custom publicPath for Electron builds
+      if (isElectronBuild) {
+        config.output.publicPath = '/_next/';
+      }
+      
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,

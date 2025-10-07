@@ -1,5 +1,5 @@
 'use client'
-import { TradingAnalytics } from '@/app/components/analytics/analytics'
+import { TradingAnalytics } from '@/components/analytics/analytics'
 import React from 'react'
 
 const page = () => {

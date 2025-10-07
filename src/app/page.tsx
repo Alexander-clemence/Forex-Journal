@@ -91,7 +91,7 @@ export default function MinimalHomePage() {
               <span className="block mt-2">Elevate your trading game.</span>
             </p>
 
-            <Link href="./login">
+            <Link href="/login">
               <button className="w-80 bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 hover:from-blue-700 hover:via-purple-700 hover:to-cyan-700 text-white px-12 py-5 rounded-2xl font-semibold text-xl transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl backdrop-blur-sm">
                 Sign In
               </button>

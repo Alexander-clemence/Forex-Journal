@@ -3,15 +3,15 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useSettings } from '@/lib/hooks/useSettings';
-import { useTheme } from '@/app/components/ThemeProvider';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { UpdateSettings } from '@/app/components/UpdateNotification';
-import { useToast } from '@/components/ui/use-toast';
+
+import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase/client';
 import { 
   User, 
@@ -29,6 +29,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import { useTheme } from '@/components/theme/ThemeProvider';
+import { UpdateSettings } from '@/components/update/UpdateNotification';
 
 const THEME_OPTIONS = [
   { value: 'light' as const, label: 'Light', icon: Sun, description: 'Light theme' },
@@ -127,7 +129,6 @@ ThemeButton.displayName = 'ThemeButton';
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { settings, loading, saving, saveSettings, updateProfile, exportData } = useSettings();
-  const { toast } = useToast();
   const { setTheme: setGlobalTheme } = useTheme();
   
   const [profile, setProfile] = useState({
@@ -189,18 +190,15 @@ export default function SettingsPage() {
         default_currency: profile.defaultCurrency
       });
       
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been saved successfully.',
+      toast.success('Profile Updated', {
+        description: 'Your profile has been saved successfully.'
       });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save profile. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Failed to save profile. Please try again.'
       });
     }
-  }, [profile, updateProfile, saveSettings, toast]);
+  }, [profile, updateProfile, saveSettings]);
 
   const handleThemeChange = useCallback(async (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -208,20 +206,17 @@ export default function SettingsPage() {
     
     try {
       await saveSettings({ theme: newTheme });
-      toast({
-        title: 'Theme Updated',
-        description: 'Your theme preference has been saved.',
+      toast.success('Theme Updated', {
+        description: 'Your theme preference has been saved.'
       });
     } catch (error) {
       setTheme(settings?.theme || 'system');
       setGlobalTheme(settings?.theme || 'system');
-      toast({
-        title: 'Error',
-        description: 'Failed to save theme preference.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Failed to save theme preference.'
       });
     }
-  }, [saveSettings, settings?.theme, setGlobalTheme, toast]);
+  }, [saveSettings, settings?.theme, setGlobalTheme]);
 
   const handleSaveTradingPreferences = useCallback(async () => {
     try {
@@ -232,18 +227,15 @@ export default function SettingsPage() {
         }
       });
       
-      toast({
-        title: 'Trading Preferences Updated',
-        description: 'Your trading preferences have been saved successfully.',
+      toast.success('Trading Preferences Updated', {
+        description: 'Your trading preferences have been saved successfully.'
       });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save trading preferences. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Failed to save trading preferences. Please try again.'
       });
     }
-  }, [tradingPrefs, saveSettings, toast]);
+  }, [tradingPrefs, saveSettings]);
 
   const handleSaveNotifications = useCallback(async () => {
     try {
@@ -255,43 +247,34 @@ export default function SettingsPage() {
         }
       });
       
-      toast({
-        title: 'Notifications Updated',
-        description: 'Your notification preferences have been saved.',
+      toast.success('Notifications Updated', {
+        description: 'Your notification preferences have been saved.'
       });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to save notifications. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Failed to save notifications. Please try again.'
       });
     }
-  }, [notifications, saveSettings, toast]);
+  }, [notifications, saveSettings]);
 
   const handleChangePassword = useCallback(async () => {
     if (!passwordChange.newPassword || !passwordChange.confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all password fields.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Please fill in all password fields.'
       });
       return;
     }
 
     if (passwordChange.newPassword !== passwordChange.confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'New passwords do not match.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'New passwords do not match.'
       });
       return;
     }
 
     if (passwordChange.newPassword.length < 6) {
-      toast({
-        title: 'Error',
-        description: 'Password must be at least 6 characters long.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Password must be at least 6 characters long.'
       });
       return;
     }
@@ -313,37 +296,31 @@ export default function SettingsPage() {
         setPasswordSuccess(false);
       }, 3000);
 
-      toast({
-        title: 'Password Updated',
-        description: 'Your password has been changed successfully.',
+      toast.success('Password Updated', {
+        description: 'Your password has been changed successfully.'
       });
     } catch (error: any) {
       setPasswordSuccess(false);
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to change password. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: error.message || 'Failed to change password. Please try again.'
       });
     } finally {
       setPasswordLoading(false);
     }
-  }, [passwordChange, toast]);
+  }, [passwordChange]);
 
   const handleExportData = useCallback(async () => {
     try {
       await exportData();
-      toast({
-        title: 'Data Exported',
-        description: 'Your data has been downloaded successfully.',
+      toast.success('Data Exported', {
+        description: 'Your data has been downloaded successfully.'
       });
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to export data. Please try again.',
-        variant: 'destructive',
+      toast.error('Error', {
+        description: 'Failed to export data. Please try again.'
       });
     }
-  }, [exportData, toast]);
+  }, [exportData]);
 
   const toggleNotification = useCallback((key: keyof typeof notifications) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));

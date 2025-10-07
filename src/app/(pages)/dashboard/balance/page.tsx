@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react';
 import { Loader2, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 
 // Lazy load the AccountBalanceManager
-const AccountBalanceManager = lazy(() => import('@/app/components/trades/AccountBalance'));
+const AccountBalanceManager = lazy(() => import('@/components/trades/AccountBalance'));
 
 // Loading skeleton component
 function AccountBalanceSkeleton() {

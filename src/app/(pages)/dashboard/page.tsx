@@ -2,21 +2,19 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { StatsCards } from '@/app/components/compdash/StatsCard';
-import { RecentTradesCard } from '@/app/components/compdash/RecentTradesard';
-import { PnLChart } from '@/app/components/analytics/PnLChart';
-import { QuickActions } from '@/app/components/compdash/QuickActions';
-import { useTrades } from '@/lib/hooks/useTrades';
-import { TrendingUp, TrendingDown, Plus, BarChart3, Wallet, Edit } from 'lucide-react';
-import Link from 'next/link';
-
-import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
-import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import { PnLChart } from '@/components/analytics/PnLChart';
+import { QuickActions } from '@/components/dashboard/QuickActions';
+import { StatsCards } from '@/components/dashboard/StatsCard';
+import { RecentTradesCard } from '@/components/dashboard/RecentTradesard';
+import { useTrades } from '@/lib/hooks/useTrades';
+import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
+import { TrendingUp, TrendingDown, Plus, BarChart3, Wallet } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
-  const { toast } = useToast();
   const { trades, loading, stats } = useTrades();
   const { currentBalance, baseBalance, tradePnL, hasBalance, setBalance, loading: balanceLoading } = useSimpleBalance();
   const [showBalanceEdit, setShowBalanceEdit] = useState(false);
@@ -27,10 +25,8 @@ export default function DashboardPage() {
     const amount = parseFloat(newBalance);
     
     if (isNaN(amount) || amount < 0) {
-      toast({
-        title: 'Invalid Amount',
+      toast.error('Invalid Amount', {
         description: 'Please enter a valid amount (0 or greater)',
-        variant: 'destructive'
       });
       return;
     }
@@ -40,15 +36,12 @@ export default function DashboardPage() {
       await setBalance(amount);
       setShowBalanceEdit(false);
       setNewBalance('');
-      toast({
-        title: 'Balance Updated',
-        description: `Base balance updated to $${amount.toFixed(2)}`
+      toast.success('Balance Updated', {
+        description: `Base balance updated to $${amount.toFixed(2)}`,
       });
     } catch (error) {
-      toast({
-        title: 'Update Failed',
+      toast.error('Update Failed', {
         description: error instanceof Error ? error.message : 'Something went wrong',
-        variant: 'destructive'
       });
     } finally {
       setBalanceUpdating(false);
@@ -173,12 +166,12 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Stats Cards - Keep original layout */}
+      {/* Stats Cards */}
       <StatsCards stats={stats} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* P&L Chart - Full width on left */}
+        {/* P&L Chart */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
@@ -199,10 +192,8 @@ export default function DashboardPage() {
 
         {/* Right Sidebar */}
         <div className="space-y-6">
-          {/* Quick Actions */}
           <QuickActions />
 
-          {/* Today's Summary with Balance Context */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Today's Summary</CardTitle>
@@ -226,7 +217,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Subtle Balance Impact */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   Account Impact
@@ -267,7 +257,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Compact Account Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -316,7 +305,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Market Status */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Market Status</CardTitle>
@@ -351,7 +339,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent Trades */}
       <RecentTradesCard trades={recentTrades} />
     </div>
   );

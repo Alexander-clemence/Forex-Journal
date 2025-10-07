@@ -198,7 +198,7 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
-      window.location.href = './dashboard';
+      window.location.href = '/dashboard';
     }
   }, [user, loading]);
 
@@ -339,7 +339,7 @@ export default function LoginPage() {
 
               <div className="mt-6 text-center space-y-2">
                 <Link
-                  href="./forgot-password"
+                  href="/forgot-password"
                   className="text-sm text-blue-600 hover:underline"
                 >
                   Forgot your password?
@@ -348,7 +348,7 @@ export default function LoginPage() {
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   Don't have an account?{' '}
                   <Link
-                    href="./register"
+                    href="/register"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     Sign up
@@ -361,7 +361,7 @@ export default function LoginPage() {
           {/* Back to landing */}
           <div className="text-center">
             <Link
-              href="./"
+              href="/"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
             >
               ← Back to home

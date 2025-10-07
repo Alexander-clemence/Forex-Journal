@@ -3,7 +3,7 @@ import { lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load the ExportDataComponent
-const ExportDataComponent = lazy(() => import('@/app/components/trades/ExportData'));
+const ExportDataComponent = lazy(() => import('@/components/trades/ExportData'));
 
 // Loading skeleton component
 function ExportDataSkeleton() {

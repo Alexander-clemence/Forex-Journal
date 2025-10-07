@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { SettingsService, UserSettings } from '@/lib/services/settingsService';
-import { useTheme } from '@/app/components/ThemeProvider';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 export function useSettings() {
   const { user } = useAuth();

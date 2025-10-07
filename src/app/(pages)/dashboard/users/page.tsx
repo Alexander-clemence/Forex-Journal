@@ -1,5 +1,5 @@
 'use client'
-import UserManagement from '@/app/components/user_management/User'
+import UserManagement from '@/components/user_management/User'
 import React from 'react'
 
 const page = () => {

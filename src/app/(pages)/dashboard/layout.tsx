@@ -1,8 +1,9 @@
 'use client';
 
+import Header from '@/components/dashboard/Header';
+import { Sidebar } from '@/components/dashboard/Sidebar';
 import { ProtectedRoute } from '@/lib/hooks/useAuth';
-import { Sidebar } from '@/app/components/compdash/Sidebar';
-import Header from '@/app/components/compdash/Header';
+
 
 
 export default function DashboardLayout({
