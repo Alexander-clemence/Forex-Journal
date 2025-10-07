@@ -138,7 +138,7 @@ function calculateTradePnL(
 }
 
 // ============================================================================
-// SMART LOT SIZE INPUT COMPONENT - Simplified (No Type Selector)
+// SMART LOT SIZE INPUT COMPONENT - Intelligent Lot Interpretation
 // ============================================================================
 
 interface SmartLotSizeInputProps {
@@ -156,30 +156,26 @@ const SmartLotSizeInput: React.FC<SmartLotSizeInputProps> = ({
 }) => {
   const [displayValue, setDisplayValue] = useState('');
   
-  // Automatically determine the best lot type for current quantity
-  const currentLotType = useMemo(() => {
-    return detectOptimalLotType(quantity);
-  }, [quantity]);
-  
-  // Initialize display value based on current quantity
+  // Calculate display value from quantity (always show as standard lots equivalent)
   useEffect(() => {
     if (quantity > 0) {
-      const lots = quantity / getLotMultiplier(currentLotType);
-      setDisplayValue(lots.toFixed(2));
+      const standardLots = quantity / 100000;
+      setDisplayValue(standardLots.toFixed(2));
     } else {
       setDisplayValue('');
     }
-  }, [quantity, currentLotType]);
+  }, [quantity]);
 
   const handleLotChange = (value: string) => {
     setDisplayValue(value);
     const lots = parseFloat(value);
     
-    if (!isNaN(lots) && lots >= 0) {
-      // Always use standard lots (100,000 units) as the base
+    if (!isNaN(lots) && lots > 0) {
+      // Convert to units: treat input as standard lots
+      // So 0.01 = 0.01 standard lots = 1,000 units (1 micro lot)
       const units = lots * 100000;
       onChange(units);
-    } else if (value === '' || value === '0') {
+    } else if (value === '' || lots === 0) {
       onChange(0);
     }
   };
@@ -193,8 +189,8 @@ const SmartLotSizeInput: React.FC<SmartLotSizeInputProps> = ({
         <Input
           id="lotSize"
           type="number"
-          step="0.01"
-          min="0"
+          step="0.001"
+          min="0.001"
           value={displayValue}
           onChange={(e) => handleLotChange(e.target.value)}
           placeholder="0.01"
@@ -202,7 +198,7 @@ const SmartLotSizeInput: React.FC<SmartLotSizeInputProps> = ({
           disabled={disabled}
         />
         <p className="text-xs text-gray-500">
-          Enter lot size (e.g., 0.01, 0.1, 1.0)
+          Enter lot size (e.g., 0.01 = 1 micro, 0.1 = 1 mini, 1.0 = 1 standard)
         </p>
       </div>
       
@@ -213,23 +209,32 @@ const SmartLotSizeInput: React.FC<SmartLotSizeInputProps> = ({
           <span className="font-bold text-base">{quantity.toLocaleString()} units</span>
         </div>
         
-        {/* Quick conversion reference - Read-only, just for info */}
-        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-500">
-            <div className="text-center">
-              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 1000).toFixed(2)}</div>
-              <div>micro lots</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 10000).toFixed(2)}</div>
-              <div>mini lots</div>
-            </div>
-            <div className="text-center">
-              <div className="font-medium text-gray-700 dark:text-gray-300">{(quantity / 100000).toFixed(2)}</div>
-              <div>standard lots</div>
+        {/* Quick conversion reference - Shows what the trader actually has */}
+        {quantity > 0 && (
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-xs text-gray-500 mb-1">This equals:</div>
+            <div className="grid grid-cols-3 gap-2 text-[10px]">
+              <div className="text-center p-1.5 bg-gray-50 dark:bg-gray-700 rounded">
+                <div className="font-bold text-sm text-gray-700 dark:text-gray-300">
+                  {(quantity / 1000).toFixed(1)}
+                </div>
+                <div className="text-gray-500">micro lots</div>
+              </div>
+              <div className="text-center p-1.5 bg-gray-50 dark:bg-gray-700 rounded">
+                <div className="font-bold text-sm text-gray-700 dark:text-gray-300">
+                  {(quantity / 10000).toFixed(2)}
+                </div>
+                <div className="text-gray-500">mini lots</div>
+              </div>
+              <div className="text-center p-1.5 bg-gray-50 dark:bg-gray-700 rounded">
+                <div className="font-bold text-sm text-gray-700 dark:text-gray-300">
+                  {(quantity / 100000).toFixed(3)}
+                </div>
+                <div className="text-gray-500">standard lots</div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
