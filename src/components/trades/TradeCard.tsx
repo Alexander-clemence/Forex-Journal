@@ -14,7 +14,8 @@ import {
   Trash2, 
   Brain,
   BarChart3,
-  Star
+  Star,
+  MoreVertical
 } from 'lucide-react';
 import { Trade } from '@/lib/types/trades';
 import { TradeDetailsModal } from './TradeDetailsModal';
@@ -29,6 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { TradeService } from '@/lib/services/tradeService';
 import { toast } from 'sonner';
 
@@ -41,26 +48,26 @@ type MoodType = 'confident' | 'analytical' | 'cautious' | 'frustrated' | 'disapp
 type SentimentType = 'bullish' | 'bearish' | 'sideways' | 'volatile' | 'uncertain' | 'neutral';
 
 const MOOD_COLORS: Record<MoodType, string> = {
-  confident: 'bg-green-100 text-green-800',
-  analytical: 'bg-blue-100 text-blue-800',
-  cautious: 'bg-yellow-100 text-yellow-800',
-  frustrated: 'bg-red-100 text-red-800',
-  disappointed: 'bg-red-100 text-red-800',
-  excited: 'bg-purple-100 text-purple-800',
-  focused: 'bg-indigo-100 text-indigo-800',
-  nervous: 'bg-orange-100 text-orange-800',
-  optimistic: 'bg-emerald-100 text-emerald-800',
-  neutral: 'bg-gray-100 text-gray-800',
-  anxious: 'bg-orange-100 text-orange-800'
+  confident: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900',
+  analytical: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900',
+  cautious: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900',
+  frustrated: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900',
+  disappointed: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900',
+  excited: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-900',
+  focused: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-400 dark:border-indigo-900',
+  nervous: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-900',
+  optimistic: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/50 dark:text-teal-400 dark:border-teal-900',
+  neutral: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800',
+  anxious: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/50 dark:text-orange-400 dark:border-orange-900'
 };
 
 const SENTIMENT_COLORS: Record<SentimentType, string> = {
-  bullish: 'text-green-600',
-  bearish: 'text-red-600',
-  sideways: 'text-gray-600',
-  volatile: 'text-orange-600',
-  uncertain: 'text-yellow-600',
-  neutral: 'text-gray-600'
+  bullish: 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+  bearish: 'text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
+  sideways: 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+  volatile: 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+  uncertain: 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  neutral: 'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
 };
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
@@ -103,19 +110,28 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
 
   const statusBadgeConfig = useMemo(() => {
     const configs = {
-      open: { variant: 'secondary' as const, className: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', text: 'Open' },
-      closed: { variant: 'secondary' as const, className: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', text: 'Closed' },
-      cancelled: { variant: 'secondary' as const, className: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300', text: 'Cancelled' }
+      open: { 
+        className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-900', 
+        text: 'Open' 
+      },
+      closed: { 
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900', 
+        text: 'Closed' 
+      },
+      cancelled: { 
+        className: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/50 dark:text-slate-400 dark:border-slate-800', 
+        text: 'Cancelled' 
+      }
     };
-    return configs[currentTrade.status] || { variant: 'secondary' as const, className: '', text: currentTrade.status };
+    return configs[currentTrade.status] || { className: '', text: currentTrade.status };
   }, [currentTrade.status]);
 
   const sideBadgeConfig = useMemo(() => {
     const isBuy = currentTrade.side === 'buy' || currentTrade.side === 'long';
     return {
       className: isBuy 
-        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900'
+        : 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-900',
       text: currentTrade.side.toUpperCase()
     };
   }, [currentTrade.side]);
@@ -124,7 +140,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     if (currentTrade.status === 'open' || !currentTrade.profit_loss) {
       return {
         isOpen: true,
-        color: 'text-gray-500 dark:text-gray-400',
+        color: 'text-slate-600 dark:text-slate-400',
         icon: Clock,
         text: 'Open Position'
       };
@@ -136,7 +152,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     return {
       isOpen: false,
       isProfit,
-      color: isProfit ? 'text-green-600' : 'text-red-600',
+      color: isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
       icon: isProfit ? TrendingUp : TrendingDown,
       amount: CURRENCY_FORMATTER.format(currentTrade.profit_loss),
       percentage: `${isProfit ? '+' : ''}${percentage.toFixed(2)}%`
@@ -152,9 +168,9 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
       const days = Math.floor(duration / (1000 * 60 * 60 * 24));
       const hours = Math.floor(duration / (1000 * 60 * 60));
       
-      if (days > 0) return `Closed after ${days} days`;
-      if (hours > 0) return `Closed after ${hours} hours`;
-      return 'Closed recently';
+      if (days > 0) return `${days}d`;
+      if (hours > 0) return `${hours}h`;
+      return 'Recently';
     }
     
     const diffTime = currentTime.getTime() - loggedDate.getTime();
@@ -162,10 +178,10 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     const hours = Math.floor(diffTime / (1000 * 60 * 60));
     const minutes = Math.floor(diffTime / (1000 * 60));
     
-    if (days > 0) return `Logged ${days} days ago`;
-    if (hours > 0) return `Logged ${hours} hours ago`;
-    if (minutes > 0) return `Logged ${minutes} minutes ago`;
-    return 'Just logged';
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'Now';
   }, [currentTrade.status, currentTrade.created_at, currentTrade.entry_date, currentTrade.updated_at, currentTime]);
 
   const positionValue = useMemo(() => 
@@ -197,239 +213,279 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
   }, []);
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          {/* Left side - Main trade info */}
-          <div className="flex items-center space-x-6">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-3">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {currentTrade.symbol}
-                </h3>
-                <Badge variant={sideBadgeConfig.className as any} className={sideBadgeConfig.className}>
-                  {sideBadgeConfig.text}
+    <Card className="group relative overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-lg transition-all duration-300">
+      {/* Colored accent bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+        currentTrade.status === 'open' 
+          ? 'bg-blue-500' 
+          : pnlDisplay.isProfit 
+            ? 'bg-emerald-500' 
+            : 'bg-red-500'
+      }`} />
+      
+      <CardContent className="p-5 sm:p-6">
+        {/* Header Section */}
+        <div className="flex items-start justify-between gap-4 mb-5">
+          {/* Left: Symbol and Status */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2.5">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+                {currentTrade.symbol}
+              </h3>
+              <Badge className={`${sideBadgeConfig.className} border font-medium px-2.5 py-0.5 text-xs`}>
+                {sideBadgeConfig.text}
+              </Badge>
+              <Badge className={`${statusBadgeConfig.className} border font-medium px-2.5 py-0.5 text-xs`}>
+                {statusBadgeConfig.text}
+              </Badge>
+            </div>
+            
+            {/* Metadata badges */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {currentTrade.mood && (
+                <Badge className={`${MOOD_COLORS[currentTrade.mood as MoodType]} border text-xs font-medium px-2 py-0.5`}>
+                  <Brain className="h-3 w-3 mr-1" />
+                  {currentTrade.mood.charAt(0).toUpperCase() + currentTrade.mood.slice(1)}
                 </Badge>
-                <Badge variant={statusBadgeConfig.variant} className={statusBadgeConfig.className}>
-                  {statusBadgeConfig.text}
+              )}
+              {currentTrade.market_sentiment && (
+                <Badge className={`${SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType]} bg-transparent border text-xs font-medium px-2 py-0.5`}>
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  {currentTrade.market_sentiment.charAt(0).toUpperCase() + currentTrade.market_sentiment.slice(1)}
                 </Badge>
-              </div>
-              
-              {/* Journal badges */}
-              <div className="flex items-center space-x-2">
-                {currentTrade.mood && (
-                  <Badge className={MOOD_COLORS[currentTrade.mood as MoodType] || 'bg-gray-100 text-gray-800'}>
-                    <Brain className="h-3 w-3 mr-1" />
-                    {currentTrade.mood.charAt(0).toUpperCase() + currentTrade.mood.slice(1)}
-                  </Badge>
-                )}
-                {currentTrade.market_sentiment && (
-                  <Badge variant="outline" className={SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType] || 'text-gray-600'}>
-                    <BarChart3 className="h-3 w-3 mr-1" />
-                    {currentTrade.market_sentiment.charAt(0).toUpperCase() + currentTrade.market_sentiment.slice(1)}
-                  </Badge>
-                )}
-                {currentTrade.performance_rating && (
-                  <div className="flex items-center">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`h-3 w-3 ${i < currentTrade.performance_rating! ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {currentTrade.strategy && (
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
-                    {currentTrade.strategy}
-                  </span>
+              )}
+              {currentTrade.performance_rating && (
+                <div className="flex items-center gap-0.5" role="img" aria-label={`${currentTrade.performance_rating} out of 5 stars`}>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`h-3 w-3 ${
+                        i < currentTrade.performance_rating! 
+                          ? 'text-amber-400 fill-amber-400' 
+                          : 'text-slate-300 dark:text-slate-700'
+                      }`}
+                    />
+                  ))}
                 </div>
               )}
             </div>
-
-            {/* Trade details */}
-            <div className="hidden md:flex items-center space-x-8 border-l border-gray-200 dark:border-gray-700 pl-6">
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Quantity</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {formatQuantity(currentTrade.quantity)}
-                </p>
+            
+            {currentTrade.strategy && (
+              <div className="mt-2">
+                <span className="inline-flex items-center text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800">
+                  {currentTrade.strategy}
+                </span>
               </div>
-
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Entry Price</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {formatPrice(currentTrade.entry_price, currentTrade.symbol)}
-                </p>
-              </div>
-
-              {currentTrade.exit_price && (
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Exit Price</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {formatPrice(currentTrade.exit_price, currentTrade.symbol)}
-                  </p>
-                </div>
-              )}
-
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Position Value</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {positionValue}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Duration</p>
-                <p className="font-semibold text-gray-900 dark:text-white">
-                  {duration}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Right side - P&L and Actions */}
-          <div className="flex items-center space-x-6">
-            <div className="text-right">
-              {pnlDisplay.isOpen ? (
-                <div className={`flex items-center ${pnlDisplay.color}`}>
-                  <pnlDisplay.icon className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{pnlDisplay.text}</span>
-                </div>
-              ) : (
-                <div className={`flex items-center ${pnlDisplay.color}`}>
-                  <pnlDisplay.icon className="h-4 w-4 mr-2" />
-                  <div className="text-right">
-                    <div className="text-lg font-bold">{pnlDisplay.amount}</div>
-                    <div className="text-sm opacity-80">{pnlDisplay.percentage}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
-                <Eye className="h-4 w-4 mr-1" />
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            {/* Desktop actions */}
+            <div className="hidden sm:flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsModalOpen(true)}
+                className="h-8 px-3 text-xs font-medium border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+              >
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
                 View
               </Button>
               
-              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
-                <Edit className="h-4 w-4 mr-1" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsEditModalOpen(true)}
+                className="h-8 px-3 text-xs font-medium border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+              >
+                <Edit className="h-3.5 w-3.5 mr-1.5" />
                 Edit
               </Button>
 
               <Button 
-                variant="destructive" 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setIsDeleteDialogOpen(true)}
                 disabled={isDeleting}
+                className="h-8 px-2.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/50"
               >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
+
+            {/* Mobile dropdown menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild className="sm:hidden">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => setIsModalOpen(true)}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Trade
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="text-red-600 dark:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        {/* Mobile view - Additional details */}
-        <div className="md:hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Quantity: </span>
-              <span className="font-medium">{formatQuantity(currentTrade.quantity)}</span>
-            </div>
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Entry: </span>
-              <span className="font-medium">{formatPrice(currentTrade.entry_price, currentTrade.symbol)}</span>
-            </div>
-            {currentTrade.exit_price && (
-              <div>
-                <span className="text-gray-500 dark:text-gray-400">Exit: </span>
-                <span className="font-medium">{formatPrice(currentTrade.exit_price, currentTrade.symbol)}</span>
-              </div>
-            )}
-            <div>
-              <span className="text-gray-500 dark:text-gray-400">Duration: </span>
-              <span className="font-medium">{duration}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom section - Dates, Notes, and Journal insights */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-              <div className="flex items-center">
-                <Calendar className="h-3 w-3 mr-1" />
-                <span>Entry: {DATE_FORMATTER.format(new Date(currentTrade.entry_date))}</span>
-              </div>
-              {currentTrade.exit_date && (
-                <div className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  <span>Exit: {DATE_FORMATTER.format(new Date(currentTrade.exit_date))}</span>
-                </div>
-              )}
-            </div>
-
-            {currentTrade.tags && currentTrade.tags.length > 0 && (
-              <div className="flex items-center space-x-1">
-                {currentTrade.tags.slice(0, 3).map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-                {currentTrade.tags.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{currentTrade.tags.length - 3}
-                  </Badge>
-                )}
-              </div>
-            )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-5 pb-5 border-b border-slate-200 dark:border-slate-800">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Quantity</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {formatQuantity(currentTrade.quantity)}
+            </p>
           </div>
 
-          {/* Journal content preview */}
-          {(currentTrade.lessons_learned || currentTrade.market_notes || currentTrade.pre_trade_plan) && (
-            <div className="mt-3 space-y-2">
-              {currentTrade.pre_trade_plan && (
-                <div className="text-sm">
-                  <span className="font-medium text-blue-600">Plan:</span>
-                  <p className="text-gray-600 dark:text-gray-400 line-clamp-1">
-                    {currentTrade.pre_trade_plan}
-                  </p>
-                </div>
-              )}
-              
-              {currentTrade.lessons_learned && (
-                <div className="text-sm">
-                  <span className="font-medium text-green-600">Lessons:</span>
-                  <p className="text-gray-600 dark:text-gray-400 line-clamp-1">
-                    {currentTrade.lessons_learned}
-                  </p>
-                </div>
-              )}
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Entry</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {formatPrice(currentTrade.entry_price, currentTrade.symbol)}
+            </p>
+          </div>
 
-              {currentTrade.market_notes && (
-                <div className="text-sm">
-                  <span className="font-medium text-purple-600">Market:</span>
-                  <p className="text-gray-600 dark:text-gray-400 line-clamp-1">
-                    {currentTrade.market_notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentTrade.notes && (
-            <div className="mt-2">
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                {currentTrade.notes}
+          {currentTrade.exit_price && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Exit</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                {formatPrice(currentTrade.exit_price, currentTrade.symbol)}
               </p>
             </div>
           )}
+
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Position</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {positionValue}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Duration</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {duration}
+            </p>
+          </div>
         </div>
+
+        {/* P&L Display */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>Entry: {DATE_FORMATTER.format(new Date(currentTrade.entry_date))}</span>
+            </div>
+            {currentTrade.exit_date && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>Exit: {DATE_FORMATTER.format(new Date(currentTrade.exit_date))}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {pnlDisplay.isOpen ? (
+              <div className={`flex items-center gap-1.5 ${pnlDisplay.color} text-sm font-medium`}>
+                <pnlDisplay.icon className="h-4 w-4" />
+                <span>{pnlDisplay.text}</span>
+              </div>
+            ) : (
+              <div className={`flex items-center gap-2 ${pnlDisplay.color}`}>
+                <pnlDisplay.icon className="h-5 w-5" />
+                <div className="text-right">
+                  <div className="text-lg font-bold leading-tight">{pnlDisplay.amount}</div>
+                  <div className="text-xs font-medium opacity-90">{pnlDisplay.percentage}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tags */}
+        {currentTrade.tags && currentTrade.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-4">
+            {currentTrade.tags.slice(0, 3).map((tag, index) => (
+              <Badge 
+                key={index} 
+                variant="outline" 
+                className="text-xs font-normal px-2 py-0.5 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              >
+                {tag}
+              </Badge>
+            ))}
+            {currentTrade.tags.length > 3 && (
+              <Badge 
+                variant="outline" 
+                className="text-xs font-normal px-2 py-0.5 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              >
+                +{currentTrade.tags.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Journal Preview */}
+        {(currentTrade.lessons_learned || currentTrade.market_notes || currentTrade.pre_trade_plan) && (
+          <div className="space-y-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3.5 border border-slate-200 dark:border-slate-800">
+            {currentTrade.pre_trade_plan && (
+              <div className="text-sm space-y-1">
+                <span className="font-semibold text-blue-600 dark:text-blue-400 text-xs uppercase tracking-wide">Plan</span>
+                <p className="text-slate-700 dark:text-slate-300 line-clamp-1 leading-relaxed">
+                  {currentTrade.pre_trade_plan}
+                </p>
+              </div>
+            )}
+            
+            {currentTrade.lessons_learned && (
+              <div className="text-sm space-y-1">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400 text-xs uppercase tracking-wide">Lessons</span>
+                <p className="text-slate-700 dark:text-slate-300 line-clamp-1 leading-relaxed">
+                  {currentTrade.lessons_learned}
+                </p>
+              </div>
+            )}
+
+            {currentTrade.market_notes && (
+              <div className="text-sm space-y-1">
+                <span className="font-semibold text-purple-600 dark:text-purple-400 text-xs uppercase tracking-wide">Market</span>
+                <p className="text-slate-700 dark:text-slate-300 line-clamp-1 leading-relaxed">
+                  {currentTrade.market_notes}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* General Notes */}
+        {currentTrade.notes && !currentTrade.pre_trade_plan && !currentTrade.lessons_learned && !currentTrade.market_notes && (
+          <div className="rounded-lg bg-slate-50 dark:bg-slate-900/50 p-3.5 border border-slate-200 dark:border-slate-800">
+            <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed">
+              {currentTrade.notes}
+            </p>
+          </div>
+        )}
       </CardContent>
 
       <TradeDetailsModal
@@ -467,7 +523,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             >
               {isDeleting ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                   Deleting...
                 </>
               ) : (
