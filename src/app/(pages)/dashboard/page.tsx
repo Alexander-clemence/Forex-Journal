@@ -12,7 +12,7 @@ import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
 import { TrendingUp, TrendingDown, Plus, BarChart3, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function DashboardPage() {
   const { trades, loading, stats } = useTrades();
