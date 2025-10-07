@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { Trade, TradeInsert, TradeUpdate, TradeFilters } from '@/lib/types/trades';
+import { ProfessionalPipCalculator } from '@/components/lotsizecalculator/LotSizeCalculator';
 
 export class TradeService {
   static async createTrade(trade: TradeInsert): Promise<Trade> {
@@ -14,7 +15,7 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore - Type inference issue with returned data
       .insert([calculatedTrade])
       .select()
       .single();
@@ -36,7 +37,7 @@ export class TradeService {
     }
 
     // Merge existing data with updates
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore - Type inference issue with returned data
     const mergedTrade = { ...existing, ...trade };
     
     // Always recalculate profit_loss based on current status and prices
@@ -46,10 +47,10 @@ export class TradeService {
     };
 
     // Recalculate risk/reward ratio if relevant fields changed
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore - Type inference issue with returned data
     if (trade.stop_loss && trade.take_profit && (trade.entry_price || existing.entry_price)) {
       updatedTrade.risk_reward_ratio = this.calculateRiskRewardRatio(
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore - Type inference issue with returned data
         trade.entry_price || existing.entry_price,
         trade.stop_loss,
         trade.take_profit
@@ -58,7 +59,7 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore - Type inference issue with returned data
       .update(updatedTrade)
       .eq('id', id)
       .select()
@@ -157,7 +158,6 @@ export class TradeService {
     winRate: number;
     avgWin: number;
     avgLoss: number;
-    // New journal-related stats
     moodStats: { [key: string]: number };
     avgPerformanceRating: number;
     commonMarketSentiment: string;
@@ -171,11 +171,11 @@ export class TradeService {
 
     const stats = {
       totalTrades: data.length,
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       openTrades: data.filter(t => t.status === 'open').length,
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       closedTrades: data.filter(t => t.status === 'closed').length,
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       totalPnL: data.reduce((sum, t) => sum + (t.profit_loss || 0), 0),
       winRate: 0,
       avgWin: 0,
@@ -185,12 +185,11 @@ export class TradeService {
       commonMarketSentiment: ''
     };
 
-    // Calculate win/loss stats
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const closedTrades = data.filter(t => t.status === 'closed' && t.profit_loss !== null && t.profit_loss !== undefined);
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const winningTrades = closedTrades.filter(t => t.profit_loss > 0);
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const losingTrades = closedTrades.filter(t => t.profit_loss < 0);
 
     if (closedTrades.length > 0) {
@@ -198,42 +197,39 @@ export class TradeService {
     }
 
     if (winningTrades.length > 0) {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       const totalWinAmount = winningTrades.reduce((sum, t) => sum + t.profit_loss, 0);
       stats.avgWin = totalWinAmount / winningTrades.length;
     }
 
     if (losingTrades.length > 0) {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       const totalLossAmount = losingTrades.reduce((sum, t) => sum + Math.abs(t.profit_loss), 0);
       stats.avgLoss = totalLossAmount / losingTrades.length;
     }
 
-    // Calculate mood stats
     const moodCounts: { [key: string]: number } = {};
     data.forEach(trade => {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       if (trade.mood) {
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         moodCounts[trade.mood] = (moodCounts[trade.mood] || 0) + 1;
       }
     });
     stats.moodStats = moodCounts;
 
-    // Calculate average performance rating
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const ratedTrades = data.filter(t => t.performance_rating);
     if (ratedTrades.length > 0) {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       stats.avgPerformanceRating = ratedTrades.reduce((sum, t) => sum + t.performance_rating, 0) / ratedTrades.length;
     }
 
-    // Find most common market sentiment
     const sentimentCounts: { [key: string]: number } = {};
     data.forEach(trade => {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       if (trade.market_sentiment) {
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         sentimentCounts[trade.market_sentiment] = (sentimentCounts[trade.market_sentiment] || 0) + 1;
       }
     });
@@ -247,7 +243,6 @@ export class TradeService {
     return stats;
   }
 
-  // Get user balance by summing all closed trade P&L
   static async getUserBalance(userId: string): Promise<{
     balance: number;
     realizedPnL: number;
@@ -259,13 +254,13 @@ export class TradeService {
       .eq('user_id', userId);
 
     if (error) throw error;
-        // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const closedTrades = data.filter(t => t.status === 'closed');
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const openTrades = data.filter(t => t.status === 'open');
-        // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const realizedPnL = closedTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
-            // @ts-ignore - Type inference issue with returned data
+    // @ts-ignore
     const unrealizedPnL = openTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
 
     return {
@@ -275,7 +270,6 @@ export class TradeService {
     };
   }
 
-  // Get journal insights
   static async getJournalInsights(userId: string): Promise<{
     performanceByMood: { [mood: string]: { avgPnL: number; count: number } };
     performanceBySentiment: { [sentiment: string]: { avgPnL: number; count: number } };
@@ -295,33 +289,32 @@ export class TradeService {
     const performanceBySentiment: { [sentiment: string]: { totalPnL: number; count: number } } = {};
 
     data.forEach(trade => {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       if (trade.mood) {
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         if (!performanceByMood[trade.mood]) {
-                  // @ts-ignore - Type inference issue with returned data
+          // @ts-ignore
           performanceByMood[trade.mood] = { totalPnL: 0, count: 0 };
         }
-        // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         performanceByMood[trade.mood].totalPnL += trade.profit_loss;
-        // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         performanceByMood[trade.mood].count += 1;
       }
-// @ts-ignore
+      // @ts-ignore
       if (trade.market_sentiment) {
         // @ts-ignore
         if (!performanceBySentiment[trade.market_sentiment]) {
           // @ts-ignore
           performanceBySentiment[trade.market_sentiment] = { totalPnL: 0, count: 0 };
         }
-        // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore
         performanceBySentiment[trade.market_sentiment].totalPnL += trade.profit_loss;
         // @ts-ignore
         performanceBySentiment[trade.market_sentiment].count += 1;
       }
     });
 
-    // Calculate averages
     const finalMoodData: { [mood: string]: { avgPnL: number; count: number } } = {};
     Object.keys(performanceByMood).forEach(mood => {
       const moodData = performanceByMood[mood];
@@ -340,12 +333,12 @@ export class TradeService {
       };
     });
 
-    // Get recent lessons
+    // @ts-ignore
     const recentLessons = data
-            // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       .filter(trade => trade.lessons_learned && trade.lessons_learned.trim())
       .slice(0, 10)
-      // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore
       .map(trade => trade.lessons_learned);
 
     return {
@@ -355,22 +348,62 @@ export class TradeService {
     };
   }
 
-  // Calculate P&L based on trade data and status
+  // FIXED: Calculate P&L using ProfessionalPipCalculator (proper pip value calculation)
   private static calculateProfitLoss(trade: {
-    status?: string; // Made optional to handle TradeInsert
+    status?: string;
     side: string;
+    symbol?: string;
     quantity: number;
     entry_price: number;
     exit_price?: number | null;
     fees?: number | null;
     commission?: number | null;
   }): number {
-    if (trade.status !== 'closed' || !trade.exit_price) {
+    if (trade.status !== 'closed' || !trade.exit_price || !trade.symbol) {
       return 0;
     }
 
-    const multiplier = (trade.side === 'buy' || trade.side === 'long') ? 1 : -1;
-    const grossPnL = multiplier * (trade.exit_price - trade.entry_price) * trade.quantity;
+    const lotSize = trade.quantity / 100000; // Convert units to standard lots
+    const isLong = trade.side === 'buy' || trade.side === 'long';
+    
+    let grossPnL: number;
+    
+    if (isLong) {
+      // LONG POSITION: Profit when price goes UP
+      if (trade.exit_price > trade.entry_price) {
+        grossPnL = ProfessionalPipCalculator.calculatePotentialProfit(
+          trade.symbol, 
+          lotSize, 
+          trade.entry_price, 
+          trade.exit_price
+        );
+      } else {
+        grossPnL = -ProfessionalPipCalculator.calculateRiskAmount(
+          trade.symbol, 
+          lotSize, 
+          trade.entry_price, 
+          trade.exit_price
+        );
+      }
+    } else {
+      // SHORT POSITION: Profit when price goes DOWN
+      if (trade.exit_price < trade.entry_price) {
+        grossPnL = ProfessionalPipCalculator.calculatePotentialProfit(
+          trade.symbol, 
+          lotSize, 
+          trade.exit_price,
+          trade.entry_price
+        );
+      } else {
+        grossPnL = -ProfessionalPipCalculator.calculateRiskAmount(
+          trade.symbol, 
+          lotSize, 
+          trade.exit_price,
+          trade.entry_price
+        );
+      }
+    }
+
     const totalCosts = (trade.fees || 0) + (trade.commission || 0);
     return grossPnL - totalCosts;
   }
