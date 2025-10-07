@@ -36,7 +36,7 @@ export const TradeDetailsModal = memo(function TradeDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 gap-0 bg-slate-950 border-slate-800">
+      <DialogContent className="w-[95vw] max-w-[1400px] h-[90vh] flex flex-col p-0 gap-0 bg-slate-950 border-slate-800">
         <DialogHeader className="px-6 pt-6 pb-5 border-b border-slate-800 flex-shrink-0">
           <DialogTitle className="text-2xl font-bold text-white tracking-tight">
             {trade.symbol} Trade Details
