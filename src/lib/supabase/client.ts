@@ -13,8 +13,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Inactivity Timer Configuration
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+// Inactivity Timer Configuration - CHANGED TO 10 MINUTES
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
 let inactivityTimer: NodeJS.Timeout | null = null;
 let isInactivityListenerActive = false;
 
@@ -39,7 +39,7 @@ export const inactivityManager = {
     
     // Set up the timeout
     inactivityTimer = setTimeout(() => {
-      console.log('User inactive for 30 minutes, signing out...');
+      console.log('User inactive for 10 minutes, signing out...');
       onTimeout();
     }, INACTIVITY_TIMEOUT);
     
@@ -63,7 +63,7 @@ export const inactivityManager = {
       };
       
       inactivityTimer = setTimeout(() => {
-        console.log('User inactive for 30 minutes, signing out...');
+        console.log('User inactive for 10 minutes, signing out...');
         onTimeout();
       }, INACTIVITY_TIMEOUT);
     }
@@ -104,8 +104,6 @@ export const auth = {
       }
     });
   },
-
-  // REMOVED: adminCreateUser - this should be done via API routes only
 
   // Sign in
   signIn: async (email: string, password: string) => {
@@ -174,7 +172,7 @@ export const auth = {
       sessionStorage.clear();
       
       // Show notification or redirect
-      alert('You have been signed out due to inactivity.');
+      alert('You have been signed out due to 10 minutes of inactivity.');
       window.location.href = '/login';
     }
     
@@ -254,7 +252,7 @@ export const auth = {
   }
 };
 
-// Database helpers (unchanged)
+// Database helpers
 export const db = {
   // Trades
   trades: {
@@ -288,7 +286,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('trades')
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -336,7 +334,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('journal_entries')
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -367,7 +365,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('strategies')
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -402,7 +400,7 @@ export const db = {
       
       return supabase
         .from('profiles')
-                // @ts-ignore - Type inference issue with returned data
+        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', user.id)
         .select()
@@ -411,7 +409,7 @@ export const db = {
   }
 };
 
-// Real-time subscriptions (unchanged)
+// Real-time subscriptions
 export const subscriptions = {
   trades: (callback: (payload: any) => void) => {
     auth.recordActivity(); // Record activity when setting up subscriptions
@@ -442,7 +440,7 @@ export const subscriptions = {
   }
 };
 
-// React Hook for using enhanced auth features (unchanged)
+// React Hook for using enhanced auth features
 export function useEnhancedAuth() {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
@@ -451,9 +449,9 @@ export function useEnhancedAuth() {
   useEffect(() => {
     // Get initial session
     auth.getCurrentSession().then(({ session }) => {
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore - Type inference issue with returned data
       setSession(session);
-              // @ts-ignore - Type inference issue with returned data
+      // @ts-ignore - Type inference issue with returned data
       setUser(session?.user || null);
       setLoading(false);
     });
