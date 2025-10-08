@@ -194,14 +194,36 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
               {sideConfig.text}
             </Badge>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => setIsModalOpen(true)}
-            className="h-8 text-xs"
-          >
-            Manage
-          </Button>
+          
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsModalOpen(true)}
+              className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="View Details"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsEditModalOpen(true)}
+              className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800"
+              title="Edit Trade"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400"
+              title="Delete Trade"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Main Metrics Row */}
