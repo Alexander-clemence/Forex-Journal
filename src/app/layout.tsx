@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/hooks/useAuth";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+     
       <ThemeProvider>
+         <SpeedInsights />
       <AuthProvider>
       <body className="electron-app">
         {children}
