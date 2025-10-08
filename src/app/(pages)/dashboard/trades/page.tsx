@@ -16,14 +16,18 @@ import { TradeCard } from '@/components/trades/TradeCard';
 // Memoized loading skeleton
 const TradeCardSkeleton = memo(() => (
   <Card>
-    <CardContent className="p-6">
-      <div className="animate-pulse space-y-4">
+    <CardContent className="p-5">
+      <div className="animate-pulse space-y-3">
         <div className="flex justify-between">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
         </div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+        </div>
       </div>
     </CardContent>
   </Card>
@@ -229,7 +233,7 @@ export default function TradesPage() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Link href="./dashboard/trades/new">
+          <Link href="/dashboard/trades/new">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Add Trade
@@ -295,27 +299,27 @@ export default function TradesPage() {
         </CardContent>
       </Card>
 
-      {/* Trades List */}
-      <div className="space-y-4">
-        {filteredTrades.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {trades.length === 0 
-                  ? "No trades found. Start by adding your first trade!"
-                  : "No trades match your search criteria."
-                }
-              </p>
-              <Link href="./dashboard/trades/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Trade
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
+      {/* Trades Grid */}
+      {filteredTrades.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              {trades.length === 0 
+                ? "No trades found. Start by adding your first trade!"
+                : "No trades match your search criteria."
+              }
+            </p>
+            <Link href="/dashboard/trades/new">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Trade
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {visibleTrades.map((trade) => (
               <TradeCard 
                 key={trade.id}
@@ -323,26 +327,27 @@ export default function TradesPage() {
                 onTradeDeleted={handleTradeDeleted}
               />
             ))}
-            
-            {/* Intersection observer trigger */}
-            {hasMore && (
-              <div ref={loadMoreRef} className="py-4">
-                {isLoadingMore && (
-                  <div className="space-y-4">
-                    <TradeCardSkeleton />
-                    <TradeCardSkeleton />
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Show count */}
-            <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
-              Showing {visibleTrades.length} of {filteredTrades.length} trades
+          </div>
+          
+          {/* Intersection observer trigger */}
+          {hasMore && (
+            <div ref={loadMoreRef} className="py-4">
+              {isLoadingMore && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <TradeCardSkeleton />
+                  <TradeCardSkeleton />
+                  <TradeCardSkeleton />
+                </div>
+              )}
             </div>
-          </>
-        )}
-      </div>
+          )}
+          
+          {/* Show count */}
+          <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+            Showing {visibleTrades.length} of {filteredTrades.length} trades
+          </div>
+        </>
+      )}
     </div>
   );
 }

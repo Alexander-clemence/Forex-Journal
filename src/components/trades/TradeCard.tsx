@@ -7,16 +7,12 @@ import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   TrendingDown, 
-  Clock, 
   Edit, 
   Eye, 
-  Calendar, 
   Trash2, 
   Brain,
   BarChart3,
-  Star,
-  MoreVertical,
-  ChevronRight
+  Star
 } from 'lucide-react';
 import { Trade } from '@/lib/types/trades';
 import { TradeDetailsModal } from './TradeDetailsModal';
@@ -31,12 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { TradeService } from '@/lib/services/tradeService';
 import { toast } from 'sonner';
 
@@ -78,12 +68,6 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2
 });
 
-const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric'
-});
-
 export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -110,43 +94,32 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     return `${quantity.toLocaleString()}`;
   }, []);
 
-  const statusConfig = useMemo(() => {
-    const configs = {
-      open: { 
-        className: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        text: 'Open'
-      },
-      closed: { 
-        className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-        text: 'Closed'
-      },
-      cancelled: { 
-        className: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-        text: 'Cancelled'
-      }
-    };
-    return configs[currentTrade.status] || configs.open;
-  }, [currentTrade.status]);
-
   const sideConfig = useMemo(() => {
     const isBuy = currentTrade.side === 'buy' || currentTrade.side === 'long';
     return {
-      gradient: isBuy ? 'from-emerald-500 to-teal-500' : 'from-red-500 to-rose-500',
       className: isBuy 
-        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-        : 'bg-red-500/10 text-red-400 border-red-500/20',
-      text: currentTrade.side.toUpperCase(),
-      icon: isBuy ? '↗' : '↘'
+        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+        : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+      text: isBuy ? 'BUY' : 'SELL'
     };
   }, [currentTrade.side]);
+
+  const statusBadge = useMemo(() => {
+    const configs = {
+      open: { className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', text: 'Open' },
+      closed: { className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400', text: 'Closed' },
+      cancelled: { className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400', text: 'Cancelled' }
+    };
+    return configs[currentTrade.status] || configs.open;
+  }, [currentTrade.status]);
 
   const pnlDisplay = useMemo(() => {
     if (currentTrade.status === 'open' || !currentTrade.profit_loss) {
       return {
         isOpen: true,
-        color: 'text-slate-500 dark:text-slate-400',
-        icon: Clock,
-        text: 'Active'
+        color: 'text-slate-600 dark:text-slate-400',
+        text: 'Open Position',
+        showArrow: false
       };
     }
 
@@ -156,10 +129,10 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     return {
       isOpen: false,
       isProfit,
-      color: isProfit ? 'text-emerald-500' : 'text-red-500',
-      icon: isProfit ? TrendingUp : TrendingDown,
+      color: isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400',
       amount: CURRENCY_FORMATTER.format(Math.abs(currentTrade.profit_loss)),
-      percentage: `${isProfit ? '+' : '-'}${Math.abs(percentage).toFixed(2)}%`
+      percentage: `${Math.abs(percentage).toFixed(2)}%`,
+      showArrow: true
     };
   }, [currentTrade.status, currentTrade.profit_loss, currentTrade.entry_price, currentTrade.quantity]);
 
@@ -210,168 +183,130 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
   }, []);
 
   return (
-    <Card className="group relative overflow-hidden bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-slate-700 transition-all duration-300">
-      {/* Status indicator bar */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${sideConfig.gradient}`} />
-      
-      <CardContent className="p-4">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              {currentTrade.symbol}
-            </h3>
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${sideConfig.className} border text-xs font-bold`}>
-              <span>{sideConfig.icon}</span>
-              <span>{sideConfig.text}</span>
-            </div>
-            <Badge className={`${statusConfig.className} border text-xs px-2 py-0.5`}>
-              {statusConfig.text}
+    <Card className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
+      <CardContent className="p-5">
+        {/* Header Row */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500 dark:text-slate-400">#{currentTrade.id?.slice(-6).toUpperCase()}</span>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{currentTrade.symbol}</h3>
+            <Badge className={`${sideConfig.className} border text-xs px-2 py-0`}>
+              {sideConfig.text}
             </Badge>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setIsModalOpen(true)}
-              className="h-8 w-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="h-8 w-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36 bg-slate-900 border-slate-800">
-                <DropdownMenuItem onClick={() => setIsEditModalOpen(true)} className="text-slate-300 focus:bg-slate-800">
-                  <Edit className="h-3.5 w-3.5 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  className="text-red-400 focus:bg-red-950 focus:text-red-300"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => setIsModalOpen(true)}
+            className="h-8 text-xs"
+          >
+            Manage
+          </Button>
         </div>
 
-        {/* Metadata Pills - Compact */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          {currentTrade.mood && (
-            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md ${MOOD_COLORS[currentTrade.mood as MoodType]} border text-xs`}>
-              <Brain className="h-3 w-3" />
-              <span>{currentTrade.mood.charAt(0).toUpperCase() + currentTrade.mood.slice(1)}</span>
-            </div>
-          )}
-          {currentTrade.market_sentiment && (
-            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-800/30 border border-slate-700 ${SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType]} text-xs`}>
-              <BarChart3 className="h-3 w-3" />
-              <span>{currentTrade.market_sentiment.charAt(0).toUpperCase() + currentTrade.market_sentiment.slice(1)}</span>
-            </div>
-          )}
-          {currentTrade.performance_rating && (
-            <div className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
-              {Array.from({ length: 5 }, (_, i) => (
-                <Star 
-                  key={i} 
-                  className={`h-2.5 w-2.5 ${
-                    i < currentTrade.performance_rating! 
-                      ? 'text-amber-400 fill-amber-400' 
-                      : 'text-slate-600'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-          {currentTrade.strategy && (
-            <div className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs">
-              {currentTrade.strategy}
-            </div>
-          )}
-        </div>
-
-        {/* Compact Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          <div className="rounded-lg bg-slate-800/30 p-2 border border-slate-700/50">
-            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Quantity</p>
-            <p className="text-xs font-semibold text-slate-200">{formatQuantity(currentTrade.quantity)}</p>
-          </div>
-
-          <div className="rounded-lg bg-slate-800/30 p-2 border border-slate-700/50">
-            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Entry</p>
-            <p className="text-xs font-semibold text-slate-200">{formatPrice(currentTrade.entry_price, currentTrade.symbol)}</p>
-          </div>
-
-          {currentTrade.exit_price ? (
-            <div className="rounded-lg bg-slate-800/30 p-2 border border-slate-700/50">
-              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Exit</p>
-              <p className="text-xs font-semibold text-slate-200">{formatPrice(currentTrade.exit_price, currentTrade.symbol)}</p>
-            </div>
-          ) : (
-            <div className="rounded-lg bg-slate-800/30 p-2 border border-slate-700/50">
-              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Exit</p>
-              <p className="text-xs font-semibold text-slate-600">—</p>
-            </div>
-          )}
-
-          <div className="rounded-lg bg-slate-800/30 p-2 border border-slate-700/50">
-            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wide mb-0.5">Duration</p>
-            <p className="text-xs font-semibold text-slate-200">{duration}</p>
-          </div>
-        </div>
-
-        {/* Compact P&L Display */}
-        <div className="flex items-center justify-between rounded-lg bg-slate-800/30 border border-slate-700/50 p-3">
-          <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-lg bg-slate-900/50 ${pnlDisplay.color}`}>
-              <pnlDisplay.icon className="h-4 w-4" />
-            </div>
-            <div>
-              {pnlDisplay.isOpen ? (
-                <>
-                  <p className={`text-sm font-bold ${pnlDisplay.color}`}>{pnlDisplay.text}</p>
-                  <p className="text-xs text-slate-500">P&L pending</p>
-                </>
-              ) : (
-                <>
-                  <p className={`text-base font-bold ${pnlDisplay.color}`}>
-                    {pnlDisplay.isProfit ? '+' : '-'}{pnlDisplay.amount}
-                  </p>
-                  <p className={`text-xs font-medium ${pnlDisplay.color} opacity-80`}>
-                    {pnlDisplay.percentage}
-                  </p>
-                </>
+        {/* Main Metrics Row */}
+        <div className="flex items-end justify-between mb-4">
+          <div className="relative">
+            {pnlDisplay.showArrow && (
+              <div className={`absolute -left-12 top-0 ${pnlDisplay.color} opacity-10`}>
+                {pnlDisplay.isProfit ? (
+                  <TrendingUp className="h-20 w-20" strokeWidth={1} />
+                ) : (
+                  <TrendingDown className="h-20 w-20" strokeWidth={1} />
+                )}
+              </div>
+            )}
+            <div className="relative z-10">
+              <div className={`text-3xl font-bold ${pnlDisplay.color} mb-1`}>
+                {pnlDisplay.isOpen ? 'Open' : (pnlDisplay.isProfit ? '+' : '-') + pnlDisplay.amount}
+              </div>
+              {!pnlDisplay.isOpen && (
+                <div className={`text-sm ${pnlDisplay.color}`}>
+                  {pnlDisplay.isProfit ? '▲' : '▼'} {pnlDisplay.percentage}
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Calendar className="h-3 w-3" />
-            <span>{DATE_FORMATTER.format(new Date(currentTrade.entry_date))}</span>
+          <div className="text-right">
+            <div className="text-slate-900 dark:text-white font-semibold mb-1">
+              {formatQuantity(currentTrade.quantity)}
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Quantity
+            </div>
           </div>
         </div>
 
-        {/* Compact View Details Button */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-slate-800/40 hover:bg-slate-800/60 border border-slate-700/50 hover:border-slate-600/50 text-slate-400 hover:text-slate-200 text-xs font-medium transition-all group/cta"
-        >
-          <span>View Full Details</span>
-          <ChevronRight className="h-3.5 w-3.5 group-hover/cta:translate-x-0.5 transition-transform" />
-        </button>
+        {/* Secondary Metrics */}
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Entry</div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">
+              {formatPrice(currentTrade.entry_price, currentTrade.symbol)}
+            </div>
+          </div>
+
+          {currentTrade.exit_price ? (
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Exit</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">
+                {formatPrice(currentTrade.exit_price, currentTrade.symbol)}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Status</div>
+              <Badge className={`${statusBadge.className} text-xs px-2 py-0`}>
+                {statusBadge.text}
+              </Badge>
+            </div>
+          )}
+
+          <div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Duration</div>
+            <div className="text-sm font-semibold text-slate-900 dark:text-white">
+              {duration}
+            </div>
+          </div>
+        </div>
+
+        {/* Strategy & Metadata */}
+        {(currentTrade.strategy || currentTrade.mood || currentTrade.market_sentiment) && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-slate-200 dark:border-slate-800">
+            {currentTrade.strategy && (
+              <span className="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                {currentTrade.strategy}
+              </span>
+            )}
+            {currentTrade.mood && (
+              <Badge className={`${MOOD_COLORS[currentTrade.mood as MoodType]} border text-xs px-2 py-0.5`}>
+                <Brain className="h-3 w-3 mr-1" />
+                {currentTrade.mood.charAt(0).toUpperCase() + currentTrade.mood.slice(1)}
+              </Badge>
+            )}
+            {currentTrade.market_sentiment && (
+              <Badge className={`bg-transparent border border-slate-300 dark:border-slate-700 ${SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType]} text-xs px-2 py-0.5`}>
+                <BarChart3 className="h-3 w-3 mr-1" />
+                {currentTrade.market_sentiment.charAt(0).toUpperCase() + currentTrade.market_sentiment.slice(1)}
+              </Badge>
+            )}
+            {currentTrade.performance_rating && (
+              <div className="inline-flex items-center gap-0.5">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`h-3 w-3 ${
+                      i < currentTrade.performance_rating! 
+                        ? 'text-amber-400 fill-amber-400' 
+                        : 'text-slate-300 dark:text-slate-700'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
 
       <TradeDetailsModal
@@ -395,7 +330,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             <AlertDialogTitle className="text-white">Delete Trade</AlertDialogTitle>
             <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this trade ({currentTrade.symbol})? 
-              This action cannot be undone and will permanently remove all trade data including journal entries.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
