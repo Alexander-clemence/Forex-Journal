@@ -1,4 +1,3 @@
-// TradeDetailsView.tsx (shortened for key sections - apply pattern throughout)
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
@@ -256,15 +255,15 @@ export const TradeDetailsView = memo(function TradeDetailsView({
   }, [currentTrade.id]);
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
+    <div className="space-y-6">
+      {/* Header Card */}
       <Card className="bg-slate-900/50 border-slate-800">
-        <CardHeader className="pb-6">
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <StatusIcon status={currentTrade.status} />
               <div>
-                <CardTitle className="text-4xl font-bold text-white mb-2">{currentTrade.symbol}</CardTitle>
+                <CardTitle className="text-3xl font-bold text-white mb-1">{currentTrade.symbol}</CardTitle>
                 <p className="text-sm text-slate-400">
                   Trade #{currentTrade.id?.slice(-8).toUpperCase()}
                 </p>
@@ -292,38 +291,38 @@ export const TradeDetailsView = memo(function TradeDetailsView({
         </CardHeader>
       </Card>
 
-      {/* Psychology & Performance Overview */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center text-xl">
-              <Brain className="h-5 w-5 mr-3 text-purple-500" />
+      {/* Psychology & Performance - Natural flex layout */}
+      <div className="flex gap-6">
+        <Card className="flex-1 bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <Brain className="h-5 w-5 mr-2 text-purple-500" />
               Psychology Overview
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {currentTrade.mood && (
-              <div className="flex items-center justify-between py-3">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-400">Trading Mood</span>
-                <Badge className={`${MOOD_COLORS[currentTrade.mood as MoodType]} border px-3 py-1`}>
-                  <Heart className="h-3.5 w-3.5 mr-2" />
+                <Badge className={`${MOOD_COLORS[currentTrade.mood as MoodType]} border`}>
+                  <Heart className="h-3 w-3 mr-1" />
                   {capitalize(currentTrade.mood)}
                 </Badge>
               </div>
             )}
             
             {currentTrade.market_sentiment && (
-              <div className="flex items-center justify-between py-3">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-400">Market Sentiment</span>
-                <Badge className={`${SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType]} bg-transparent border px-3 py-1`}>
-                  <BarChart3 className="h-3.5 w-3.5 mr-2" />
+                <Badge className={`${SENTIMENT_COLORS[currentTrade.market_sentiment as SentimentType]} bg-transparent border`}>
+                  <BarChart3 className="h-3 w-3 mr-1" />
                   {capitalize(currentTrade.market_sentiment)}
                 </Badge>
               </div>
             )}
             
             {currentTrade.performance_rating && (
-              <div className="flex items-center justify-between py-3">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-400">Performance Rating</span>
                 <PerformanceStars rating={currentTrade.performance_rating} />
               </div>
@@ -331,28 +330,27 @@ export const TradeDetailsView = memo(function TradeDetailsView({
           </CardContent>
         </Card>
 
-        {/* P&L and Performance */}
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Performance</CardTitle>
+        <Card className="flex-1 bg-slate-900/50 border-slate-800">
+          <CardHeader>
+            <CardTitle className="text-lg">Performance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             {currentTrade.profit_loss !== null && currentTrade.status === 'closed' ? (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 p-8 border border-slate-700">
-                <div className={`flex items-center justify-center mb-4 ${
+              <div className="text-center p-6 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700">
+                <div className={`flex items-center justify-center mb-2 ${
                   currentTrade.profit_loss >= 0 ? 'text-emerald-500' : 'text-red-500'
                 }`}>
                   {currentTrade.profit_loss >= 0 ? (
-                    <TrendingUp className="h-10 w-10" />
+                    <TrendingUp className="h-8 w-8 mr-2" />
                   ) : (
-                    <TrendingDown className="h-10 w-10" />
+                    <TrendingDown className="h-8 w-8 mr-2" />
                   )}
                 </div>
-                <p className="text-4xl font-bold mb-2 text-center text-white">
+                <p className="text-3xl font-bold mb-2 text-white">
                   {CURRENCY_FORMATTER.format(currentTrade.profit_loss)}
                 </p>
                 {pnlPercentage && (
-                  <p className={`text-xl text-center font-semibold ${
+                  <p className={`text-lg ${
                     currentTrade.profit_loss >= 0 ? 'text-emerald-400' : 'text-red-400'
                   }`}>
                     {currentTrade.profit_loss >= 0 ? '+' : ''}{pnlPercentage}%
@@ -360,58 +358,58 @@ export const TradeDetailsView = memo(function TradeDetailsView({
                 )}
               </div>
             ) : (
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 p-8 border border-blue-500/20">
-                <Clock className="h-10 w-10 text-blue-400 mx-auto mb-4" />
-                <p className="text-2xl font-bold text-blue-300 text-center mb-2">
+              <div className="text-center p-6 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                <Clock className="h-8 w-8 text-blue-400 mx-auto mb-2" />
+                <p className="text-xl font-bold text-blue-300 mb-1">
                   Open Position
                 </p>
-                <p className="text-sm text-blue-400 text-center">
+                <p className="text-sm text-blue-400">
                   P&L will be calculated when closed
                 </p>
               </div>
             )}
 
-            <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700 text-center">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Position Value</p>
-              <p className="text-2xl font-bold text-white">{positionValue}</p>
+            <div className="text-center p-4 border border-slate-700 rounded-lg bg-slate-800/30">
+              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Position Value</p>
+              <p className="text-xl font-bold text-white">{positionValue}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Trade Information */}
+      {/* Position Details */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
-          <CardTitle className="text-xl">Position Details</CardTitle>
+          <CardTitle className="text-lg">Position Details</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Quantity</p>
-              <p className="text-lg font-bold text-white">
+        <CardContent className="space-y-6">
+          <div className="flex gap-4">
+            <div className="flex-1 text-center p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Quantity</p>
+              <p className="font-bold text-white">
                 {formatQuantity(currentTrade.quantity)}
               </p>
             </div>
 
-            <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Entry Price</p>
-              <p className="text-lg font-bold text-white">
+            <div className="flex-1 text-center p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Entry Price</p>
+              <p className="font-bold text-white">
                 {formatPrice(currentTrade.entry_price, currentTrade.symbol)}
               </p>
             </div>
 
             {currentTrade.exit_price && (
-              <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700">
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Exit Price</p>
-                <p className="text-lg font-bold text-white">
+              <div className="flex-1 text-center p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+                <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Exit Price</p>
+                <p className="font-bold text-white">
                   {formatPrice(currentTrade.exit_price, currentTrade.symbol)}
                 </p>
               </div>
             )}
 
-            <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Duration</p>
-              <p className="text-lg font-bold text-white">
+            <div className="flex-1 text-center p-4 bg-slate-800/30 border border-slate-700 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Duration</p>
+              <p className="font-bold text-white">
                 {duration}
               </p>
             </div>
@@ -422,17 +420,15 @@ export const TradeDetailsView = memo(function TradeDetailsView({
             <>
               <Separator className="bg-slate-800" />
               <div>
-                <h4 className="text-lg font-semibold mb-6 flex items-center text-white">
-                  <Target className="h-5 w-5 mr-3 text-blue-500" />
+                <h4 className="font-semibold mb-4 flex items-center text-white">
+                  <Target className="h-4 w-4 mr-2 text-blue-500" />
                   Risk Management
                 </h4>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="flex gap-4">
                   {currentTrade.stop_loss && (
-                    <div className="flex items-center justify-between p-5 rounded-xl bg-slate-800/50 border border-slate-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-red-500/10">
-                          <StopCircle className="h-5 w-5 text-red-500" />
-                        </div>
+                    <div className="flex-1 flex items-center justify-between p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                      <div className="flex items-center gap-2">
+                        <StopCircle className="h-4 w-4 text-red-500" />
                         <span className="text-sm font-medium text-slate-300">Stop Loss</span>
                       </div>
                       <div className="text-right">
@@ -445,11 +441,9 @@ export const TradeDetailsView = memo(function TradeDetailsView({
                   )}
 
                   {currentTrade.take_profit && (
-                    <div className="flex items-center justify-between p-5 rounded-xl bg-slate-800/50 border border-slate-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-emerald-500/10">
-                          <Target className="h-5 w-5 text-emerald-500" />
-                        </div>
+                    <div className="flex-1 flex items-center justify-between p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-emerald-500" />
                         <span className="text-sm font-medium text-slate-300">Take Profit</span>
                       </div>
                       <div className="text-right">
@@ -462,11 +456,9 @@ export const TradeDetailsView = memo(function TradeDetailsView({
                   )}
 
                   {riskReward && (
-                    <div className="flex items-center justify-between p-5 rounded-xl bg-slate-800/50 border border-slate-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-blue-500/10">
-                          <Calculator className="h-5 w-5 text-blue-500" />
-                        </div>
+                    <div className="flex-1 flex items-center justify-between p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                      <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-blue-500" />
                         <span className="text-sm font-medium text-slate-300">Risk:Reward</span>
                       </div>
                       <div className="text-right">
@@ -485,21 +477,21 @@ export const TradeDetailsView = memo(function TradeDetailsView({
             <>
               <Separator className="bg-slate-800" />
               <div>
-                <h4 className="text-lg font-semibold mb-6 flex items-center text-white">
-                  <DollarSign className="h-5 w-5 mr-3 text-emerald-500" />
+                <h4 className="font-semibold mb-4 flex items-center text-white">
+                  <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
                   Trading Costs
                 </h4>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="flex gap-4">
                   {currentTrade.fees && (
-                    <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700 text-center">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Fees</p>
-                      <p className="text-lg font-bold text-white">{CURRENCY_FORMATTER.format(currentTrade.fees)}</p>
+                    <div className="flex-1 text-center p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                      <p className="text-xs text-slate-500 mb-1">Fees</p>
+                      <p className="font-bold text-white">{CURRENCY_FORMATTER.format(currentTrade.fees)}</p>
                     </div>
                   )}
                   {currentTrade.commission && (
-                    <div className="rounded-xl bg-slate-800/50 p-5 border border-slate-700 text-center">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Commission</p>
-                      <p className="text-lg font-bold text-white">{CURRENCY_FORMATTER.format(currentTrade.commission)}</p>
+                    <div className="flex-1 text-center p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                      <p className="text-xs text-slate-500 mb-1">Commission</p>
+                      <p className="font-bold text-white">{CURRENCY_FORMATTER.format(currentTrade.commission)}</p>
                     </div>
                   )}
                 </div>
@@ -509,50 +501,50 @@ export const TradeDetailsView = memo(function TradeDetailsView({
         </CardContent>
       </Card>
 
-      {/* Journal Analysis Sections */}
+      {/* Journal sections - Natural flex layout */}
       {(currentTrade.pre_trade_plan || currentTrade.trade_analysis || currentTrade.market_notes) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <Card className="bg-slate-900/50 border-slate-800">
+        <div className="flex gap-6">
+          <Card className="flex-1 bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Eye className="h-5 w-5 mr-3 text-blue-500" />
+              <CardTitle className="flex items-center text-lg">
+                <Eye className="h-5 w-5 mr-2 text-blue-500" />
                 Pre-Trade Analysis
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {currentTrade.pre_trade_plan && (
                 <div>
-                  <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Trading Plan</p>
-                  <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.pre_trade_plan}</p>
+                  <p className="text-xs font-medium text-blue-400 mb-2 uppercase tracking-wide">Trading Plan</p>
+                  <div className="p-3 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.pre_trade_plan}</p>
                   </div>
                 </div>
               )}
               
               {currentTrade.trade_analysis && (
                 <div>
-                  <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-3">Technical Analysis</p>
-                  <div className="p-5 bg-purple-500/5 border border-purple-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.trade_analysis}</p>
+                  <p className="text-xs font-medium text-purple-400 mb-2 uppercase tracking-wide">Technical Analysis</p>
+                  <div className="p-3 bg-purple-500/5 border border-purple-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.trade_analysis}</p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/50 border-slate-800">
+          <Card className="flex-1 bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <BarChart3 className="h-5 w-5 mr-3 text-emerald-500" />
+              <CardTitle className="flex items-center text-lg">
+                <BarChart3 className="h-5 w-5 mr-2 text-emerald-500" />
                 Market Context
               </CardTitle>
             </CardHeader>
             <CardContent>
               {currentTrade.market_notes && (
                 <div>
-                  <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-3">Market Notes</p>
-                  <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.market_notes}</p>
+                  <p className="text-xs font-medium text-emerald-400 mb-2 uppercase tracking-wide">Market Notes</p>
+                  <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.market_notes}</p>
                   </div>
                 </div>
               )}
@@ -563,48 +555,48 @@ export const TradeDetailsView = memo(function TradeDetailsView({
 
       {/* Psychology & Learning */}
       {(currentTrade.emotional_state || currentTrade.post_trade_review || currentTrade.lessons_learned) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <Card className="bg-slate-900/50 border-slate-800">
+        <div className="flex gap-6">
+          <Card className="flex-1 bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Heart className="h-5 w-5 mr-3 text-red-500" />
+              <CardTitle className="flex items-center text-lg">
+                <Heart className="h-5 w-5 mr-2 text-red-500" />
                 Emotional Journey
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {currentTrade.emotional_state && (
                 <div>
-                  <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-3">Pre-Trade Emotions</p>
-                  <div className="p-5 bg-orange-500/5 border border-orange-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.emotional_state}</p>
+                  <p className="text-xs font-medium text-orange-400 mb-2 uppercase tracking-wide">Pre-Trade Emotions</p>
+                  <div className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.emotional_state}</p>
                   </div>
                 </div>
               )}
               
               {currentTrade.post_trade_review && (
                 <div>
-                  <p className="text-xs font-semibold text-pink-400 uppercase tracking-wider mb-3">Post-Trade Reflection</p>
-                  <div className="p-5 bg-pink-500/5 border border-pink-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.post_trade_review}</p>
+                  <p className="text-xs font-medium text-pink-400 mb-2 uppercase tracking-wide">Post-Trade Reflection</p>
+                  <div className="p-3 bg-pink-500/5 border border-pink-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.post_trade_review}</p>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/50 border-slate-800">
+          <Card className="flex-1 bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Lightbulb className="h-5 w-5 mr-3 text-amber-500" />
+              <CardTitle className="flex items-center text-lg">
+                <Lightbulb className="h-5 w-5 mr-2 text-amber-500" />
                 Key Learnings
               </CardTitle>
             </CardHeader>
             <CardContent>
               {currentTrade.lessons_learned && (
                 <div>
-                  <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Lessons Learned</p>
-                  <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.lessons_learned}</p>
+                  <p className="text-xs font-medium text-amber-400 mb-2 uppercase tracking-wide">Lessons Learned</p>
+                  <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.lessons_learned}</p>
                   </div>
                 </div>
               )}
@@ -616,34 +608,28 @@ export const TradeDetailsView = memo(function TradeDetailsView({
       {/* Timeline */}
       <Card className="bg-slate-900/50 border-slate-800">
         <CardHeader>
-          <CardTitle className="flex items-center text-xl">
-            <Calendar className="h-5 w-5 mr-3 text-cyan-500" />
+          <CardTitle className="flex items-center text-lg">
+            <Calendar className="h-5 w-5 mr-2 text-cyan-500" />
             Timeline
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-5">
-            <div className="flex items-center gap-5 p-5 rounded-xl bg-slate-800/50 border border-slate-700">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/10">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
               <div className="flex-1">
-                <p className="font-semibold text-white mb-1">Trade Opened</p>
+                <p className="font-medium text-white">Trade Opened</p>
                 <p className="text-sm text-slate-400">{DATETIME_FORMATTER.format(new Date(currentTrade.entry_date))}</p>
               </div>
             </div>
             
             {currentTrade.exit_date && (
-              <div className="flex items-center gap-5 p-5 rounded-xl bg-slate-800/50 border border-slate-700">
-                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  currentTrade.status === 'closed' ? 'bg-blue-500/10' : 'bg-slate-500/10'
-                }`}>
-                  <div className={`w-3 h-3 rounded-full ${
-                    currentTrade.status === 'closed' ? 'bg-blue-500' : 'bg-slate-500'
-                  }`}></div>
-                </div>
+              <div className="flex items-center gap-4 p-3 border border-slate-700 rounded-lg bg-slate-800/30">
+                <div className={`w-3 h-3 rounded-full ${
+                  currentTrade.status === 'closed' ? 'bg-blue-500' : 'bg-slate-500'
+                }`}></div>
                 <div className="flex-1">
-                  <p className="font-semibold text-white mb-1">Trade Closed</p>
+                  <p className="font-medium text-white">Trade Closed</p>
                   <p className="text-sm text-slate-400">{DATETIME_FORMATTER.format(new Date(currentTrade.exit_date))}</p>
                 </div>
               </div>
@@ -654,43 +640,43 @@ export const TradeDetailsView = memo(function TradeDetailsView({
 
       {/* Strategy and Notes */}
       {(currentTrade.strategy || currentTrade.setup || currentTrade.notes || (currentTrade.tags && currentTrade.tags.length > 0)) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="flex gap-6">
           {(currentTrade.strategy || currentTrade.setup) && (
-            <Card className="bg-slate-900/50 border-slate-800">
+            <Card className="flex-1 bg-slate-900/50 border-slate-800">
               <CardHeader>
-                <CardTitle className="text-xl">Strategy & Setup</CardTitle>
+                <CardTitle className="text-lg">Strategy & Setup</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-4">
                 {currentTrade.strategy && (
                   <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Strategy</p>
-                    <p className="text-lg text-white font-medium">{currentTrade.strategy}</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">Strategy</p>
+                    <p className="text-base text-white">{currentTrade.strategy}</p>
                   </div>
                 )}
                 {currentTrade.setup && (
                   <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Setup</p>
-                    <p className="text-lg text-white font-medium">{currentTrade.setup}</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1 uppercase tracking-wide">Setup</p>
+                    <p className="text-base text-white">{currentTrade.setup}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
 
-          <Card className="bg-slate-900/50 border-slate-800">
+          <Card className="flex-1 bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="flex items-center text-xl">
-                <Tag className="h-5 w-5 mr-3 text-indigo-500" />
+              <CardTitle className="flex items-center text-lg">
+                <Tag className="h-5 w-5 mr-2 text-indigo-500" />
                 Additional Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {currentTrade.tags && currentTrade.tags.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Tags</p>
+                  <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Tags</p>
                   <div className="flex flex-wrap gap-2">
                     {currentTrade.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-sm px-3 py-1 bg-slate-800/50 border-slate-700 text-slate-300">
+                      <Badge key={index} variant="outline" className="text-xs bg-slate-800/50 border-slate-700 text-slate-300">
                         {tag}
                       </Badge>
                     ))}
@@ -700,12 +686,12 @@ export const TradeDetailsView = memo(function TradeDetailsView({
               
               {currentTrade.notes && (
                 <div>
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3 flex items-center">
-                    <FileText className="h-3.5 w-3.5 mr-2" />
+                  <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide flex items-center">
+                    <FileText className="h-3 w-3 mr-1" />
                     Notes
                   </p>
-                  <div className="p-5 bg-slate-800/50 border border-slate-700 rounded-xl">
-                    <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{currentTrade.notes}</p>
+                  <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+                    <p className="text-sm text-slate-300 whitespace-pre-wrap">{currentTrade.notes}</p>
                   </div>
                 </div>
               )}
@@ -724,16 +710,16 @@ export const TradeDetailsView = memo(function TradeDetailsView({
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent className="bg-slate-900 border-slate-800">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white text-xl">Delete Trade</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400 leading-relaxed">
+            <AlertDialogTitle className="text-white">Delete Trade</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
               Are you sure you want to delete this trade ({currentTrade.symbol})? 
               This action cannot be undone and will permanently remove all trade data including:
               <br /><br />
-              <span className="text-slate-300">• Trade details and pricing information</span><br />
-              <span className="text-slate-300">• Notes and strategy information</span><br />
-              <span className="text-slate-300">• Tags and setup details</span><br />
-              <span className="text-slate-300">• All journal entries and psychological data</span><br />
-              <span className="text-slate-300">• All historical data for this trade</span>
+              • Trade details and pricing information<br />
+              • Notes and strategy information<br />
+              • Tags and setup details<br />
+              • All journal entries and psychological data<br />
+              • All historical data for this trade
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

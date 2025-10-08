@@ -42,7 +42,7 @@ export default function DashboardPage() {
         description: `Base balance updated to $${amount.toFixed(2)}`,
       });
     } catch (error) {
-      //@ts-ignore
+      //
       Toaster.error('Update Failed', {
         description: error instanceof Error ? error.message : 'Something went wrong',
       });
