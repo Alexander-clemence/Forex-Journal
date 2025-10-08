@@ -30,11 +30,12 @@ export default function RootLayout({
     <html lang="en">
      
       <ThemeProvider>
-         <SpeedInsights />
+      
       <AuthProvider>
       <body className="electron-app">
         {children}
         <Toaster />
+           <SpeedInsights />
       </body>
       </AuthProvider>
       </ThemeProvider>
