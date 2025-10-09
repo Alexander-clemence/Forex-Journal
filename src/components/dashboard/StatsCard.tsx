@@ -81,12 +81,11 @@ StatCard.displayName = 'StatCard';
 
 export const StatsCards = memo(({ stats }: StatsCardsProps) => {
   // Memoize computed values
-  const winLossPercentage = useMemo(() => {
+  const winLossRatio = useMemo(() => {
     if (stats.avgWin === 0 && stats.avgLoss === 0) return 0;
-    if (stats.avgLoss === 0) return 100;
-    
-    const winLossRatio = stats.avgWin / Math.abs(stats.avgLoss);
-    return (winLossRatio / (1 + winLossRatio)) * 100;
+    if (stats.avgLoss === 0) return stats.avgWin > 0 ? 999 : 0;
+    // Calculate ratio: how many times bigger wins are than losses
+    return stats.avgWin / stats.avgLoss;
   }, [stats.avgWin, stats.avgLoss]);
 
   // Memoize formatted values
@@ -94,11 +93,14 @@ export const StatsCards = memo(({ stats }: StatsCardsProps) => {
     totalPnL: formatCurrency(stats.totalPnL),
     winRate: formatPercentage(stats.winRate),
     bestTrade: formatCurrency(stats.bestTrade),
+    // worstTrade is negative, so take absolute value for display
     worstTrade: formatCurrency(Math.abs(stats.worstTrade)),
     avgWin: formatCurrency(stats.avgWin),
-    avgLoss: formatCurrency(Math.abs(stats.avgLoss)),
-    winLossPercentage: winLossPercentage > 0 ? `${winLossPercentage.toFixed(1)}%` : '0%'
-  }), [stats, winLossPercentage]);
+    // avgLoss is already positive from useTrades hook - no need for Math.abs()
+    avgLoss: formatCurrency(stats.avgLoss),
+    // Show as ratio in X.X:1 format (standard trading format)
+    winLossRatio: winLossRatio >= 999 ? '∞:1' : winLossRatio === 0 ? '0:1' : `${winLossRatio.toFixed(2)}:1`
+  }), [stats, winLossRatio]);
 
   // Memoize stat cards configuration
   const statCards = useMemo<StatCardData[]>(() => [
@@ -132,8 +134,8 @@ export const StatsCards = memo(({ stats }: StatsCardsProps) => {
     {
       title: 'Best Trade',
       value: formattedStats.bestTrade,
-      change: stats.bestTrade > 0 ? '+' : '',
-      changeType: 'positive',
+      change: stats.bestTrade > 0 ? 'Winner' : 'None',
+      changeType: stats.bestTrade > 0 ? 'positive' : 'neutral',
       icon: TrendingUp,
       description: 'Highest single profit',
       valueColor: 'text-green-600 dark:text-green-400'
@@ -141,22 +143,22 @@ export const StatsCards = memo(({ stats }: StatsCardsProps) => {
     {
       title: 'Worst Trade',
       value: formattedStats.worstTrade,
-      change: stats.worstTrade < 0 ? '-' : '',
-      changeType: 'negative',
+      change: stats.worstTrade < 0 ? 'Loss' : 'None',
+      changeType: stats.worstTrade < 0 ? 'negative' : 'neutral',
       icon: TrendingDown,
       description: 'Largest single loss',
       valueColor: 'text-red-600 dark:text-red-400'
     },
     {
-      title: 'Win/Loss Ratio',
-      value: formattedStats.winLossPercentage,
+      title: 'Avg Win vs Loss',
+      value: formattedStats.winLossRatio,
       change: `${formattedStats.avgWin} / ${formattedStats.avgLoss}`,
-      changeType: winLossPercentage >= 50 ? 'positive' : 'negative',
+      changeType: winLossRatio >= 1.5 ? 'positive' : winLossRatio >= 1 ? 'neutral' : 'negative',
       icon: Percent,
-      description: 'Avg win vs avg loss',
-      valueColor: winLossPercentage >= 50 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+      description: 'Win/Loss ratio',
+      valueColor: winLossRatio >= 1 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
     }
-  ], [stats, formattedStats, winLossPercentage]);
+  ], [stats, formattedStats, winLossRatio]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">

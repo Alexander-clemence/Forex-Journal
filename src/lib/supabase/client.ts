@@ -13,10 +13,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Inactivity Timer Configuration - CHANGED TO 10 MINUTES
+// Inactivity Timer Configuration - 10 MINUTES
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
 let inactivityTimer: NodeJS.Timeout | null = null;
 let isInactivityListenerActive = false;
+let timeoutCallback: (() => void) | null = null;
 
 // Activity events to track
 const ACTIVITY_EVENTS = [
@@ -34,13 +35,18 @@ export const inactivityManager = {
   start: (onTimeout: () => void) => {
     if (typeof window === 'undefined') return; // Server-side check
     
+    // Store the callback
+    timeoutCallback = onTimeout;
+    
     // Clear any existing timer
     inactivityManager.stop();
     
     // Set up the timeout
     inactivityTimer = setTimeout(() => {
       console.log('User inactive for 10 minutes, signing out...');
-      onTimeout();
+      if (timeoutCallback) {
+        timeoutCallback();
+      }
     }, INACTIVITY_TIMEOUT);
     
     // Add activity listeners if not already active
@@ -54,17 +60,15 @@ export const inactivityManager = {
 
   // Reset the timer on user activity
   resetTimer: () => {
-    if (inactivityTimer) {
+    if (inactivityTimer && timeoutCallback) {
       clearTimeout(inactivityTimer);
       
-      // Restart the timer
-      const onTimeout = () => {
-        auth.signOutDueToInactivity();
-      };
-      
+      // Restart the timer with the stored callback
       inactivityTimer = setTimeout(() => {
         console.log('User inactive for 10 minutes, signing out...');
-        onTimeout();
+        if (timeoutCallback) {
+          timeoutCallback();
+        }
       }, INACTIVITY_TIMEOUT);
     }
   },
@@ -75,6 +79,9 @@ export const inactivityManager = {
       clearTimeout(inactivityTimer);
       inactivityTimer = null;
     }
+    
+    // Clear the callback
+    timeoutCallback = null;
     
     // Remove activity listeners
     if (isInactivityListenerActive && typeof window !== 'undefined') {
@@ -130,9 +137,17 @@ export const auth = {
     // Sign out from current session
     const result = await supabase.auth.signOut();
     
-    // Clear local storage
+    // Clear local storage (but be selective - don't clear everything)
     if (typeof window !== 'undefined') {
-      localStorage.clear();
+      // Only clear Supabase-related items
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('supabase.')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       sessionStorage.clear();
     }
     
@@ -149,7 +164,14 @@ export const auth = {
     
     // Clear local storage
     if (typeof window !== 'undefined') {
-      localStorage.clear();
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('supabase.')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       sessionStorage.clear();
     }
     
@@ -164,19 +186,24 @@ export const auth = {
     inactivityManager.stop();
     
     // Sign out from current session
-    const result = await supabase.auth.signOut();
+    await supabase.auth.signOut();
     
     // Clear local storage
     if (typeof window !== 'undefined') {
-      localStorage.clear();
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('supabase.')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       sessionStorage.clear();
       
-      // Show notification or redirect
+      // Show notification and redirect
       alert('You have been signed out due to 10 minutes of inactivity.');
       window.location.href = '/login';
     }
-    
-    return result;
   },
 
   // Get current user
@@ -257,7 +284,7 @@ export const db = {
   // Trades
   trades: {
     getAll: () => {
-      auth.recordActivity(); // Record activity on database interaction
+      auth.recordActivity();
       return supabase
         .from('trades')
         .select('*')
@@ -286,7 +313,6 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('trades')
-        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -334,7 +360,6 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('journal_entries')
-        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -365,7 +390,6 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('strategies')
-        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', id)
         .select()
@@ -400,7 +424,6 @@ export const db = {
       
       return supabase
         .from('profiles')
-        // @ts-ignore - Type inference issue with returned data
         .update(updates)
         .eq('id', user.id)
         .select()
@@ -412,13 +435,13 @@ export const db = {
 // Real-time subscriptions
 export const subscriptions = {
   trades: (callback: (payload: any) => void) => {
-    auth.recordActivity(); // Record activity when setting up subscriptions
+    auth.recordActivity();
     return supabase
       .channel('trades_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'trades' },
         (payload) => {
-          auth.recordActivity(); // Record activity on real-time events
+          auth.recordActivity();
           callback(payload);
         }
       )
@@ -442,16 +465,14 @@ export const subscriptions = {
 
 // React Hook for using enhanced auth features
 export function useEnhancedAuth() {
-  const [user, setUser] = useState(null);
-  const [session, setSession] = useState(null);
+  const [user, setUser] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get initial session
     auth.getCurrentSession().then(({ session }) => {
-      // @ts-ignore - Type inference issue with returned data
       setSession(session);
-      // @ts-ignore - Type inference issue with returned data
       setUser(session?.user || null);
       setLoading(false);
     });
@@ -465,7 +486,7 @@ export function useEnhancedAuth() {
 
     return () => {
       subscription.unsubscribe();
-      inactivityManager.stop(); // Clean up on unmount
+      inactivityManager.stop();
     };
   }, []);
 

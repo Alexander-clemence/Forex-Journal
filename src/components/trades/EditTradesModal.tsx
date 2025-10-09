@@ -10,7 +10,8 @@ import {
 import { TradeService } from '@/lib/services/tradeService';
 import { toast } from 'sonner';
 import { Trade, TradeFormData } from '@/lib/types/trades';
-import { TradeEntryForm } from '../TradeEntryform/TradeEntryForm';
+import { SimpleTradeForm } from '../TradeEntryform/TradeEntryForm';
+
 
 interface EditTradeModalProps {
   trade: Trade;
@@ -190,7 +191,7 @@ export const EditTradeModal = memo(({ trade, isOpen, onClose, onTradeUpdated }: 
         <ModalHeader symbol={headerInfo.symbol} status={headerInfo.status} />
         
         <div className="mt-4">
-          <TradeEntryForm
+          <SimpleTradeForm
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             initialData={initialData}

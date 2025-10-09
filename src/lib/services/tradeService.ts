@@ -1,13 +1,12 @@
 import { supabase } from '@/lib/supabase/client';
 import { Trade, TradeInsert, TradeUpdate, TradeFilters } from '@/lib/types/trades';
-import { ProfessionalPipCalculator } from '@/components/lotsizecalculator/LotSizeCalculator';
 
 export class TradeService {
   static async createTrade(trade: TradeInsert): Promise<Trade> {
-    // Calculate profit_loss based on status
+    // Calculate risk/reward ratio if applicable
     const calculatedTrade = {
       ...trade,
-      profit_loss: this.calculateProfitLoss(trade),
+      // Don't calculate P&L - let user enter it directly
       risk_reward_ratio: trade.stop_loss && trade.take_profit 
         ? this.calculateRiskRewardRatio(trade.entry_price, trade.stop_loss, trade.take_profit)
         : null
@@ -15,7 +14,6 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-      // @ts-ignore - Type inference issue with returned data
       .insert([calculatedTrade])
       .select()
       .single();
@@ -25,7 +23,6 @@ export class TradeService {
   }
 
   static async updateTrade(id: string, trade: TradeUpdate): Promise<Trade> {
-    // Get existing trade data first
     const { data: existing } = await supabase
       .from('trades')
       .select('*')
@@ -36,21 +33,13 @@ export class TradeService {
       throw new Error('Trade not found');
     }
 
-    // Merge existing data with updates
-    // @ts-ignore - Type inference issue with returned data
-    const mergedTrade = { ...existing, ...trade };
-    
-    // Always recalculate profit_loss based on current status and prices
     const updatedTrade = {
       ...trade,
-      profit_loss: this.calculateProfitLoss(mergedTrade),
     };
 
     // Recalculate risk/reward ratio if relevant fields changed
-    // @ts-ignore - Type inference issue with returned data
     if (trade.stop_loss && trade.take_profit && (trade.entry_price || existing.entry_price)) {
       updatedTrade.risk_reward_ratio = this.calculateRiskRewardRatio(
-        // @ts-ignore - Type inference issue with returned data
         trade.entry_price || existing.entry_price,
         trade.stop_loss,
         trade.take_profit
@@ -59,7 +48,6 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-      // @ts-ignore - Type inference issue with returned data
       .update(updatedTrade)
       .eq('id', id)
       .select()
@@ -107,10 +95,6 @@ export class TradeService {
 
     if (filters?.market_sentiment) {
       query = query.eq('market_sentiment', filters.market_sentiment);
-    }
-
-    if (filters?.performance_rating) {
-      query = query.eq('performance_rating', filters.performance_rating);
     }
 
     if (filters?.date_from) {
@@ -164,19 +148,16 @@ export class TradeService {
   }> {
     const { data, error } = await supabase
       .from('trades')
-      .select('status, profit_loss, mood, performance_rating, market_sentiment')
+      .select('status, profit_loss, mood, market_sentiment')
       .eq('user_id', userId);
 
     if (error) throw error;
 
     const stats = {
       totalTrades: data.length,
-      // @ts-ignore
-      openTrades: data.filter(t => t.status === 'open').length,
-      // @ts-ignore
-      closedTrades: data.filter(t => t.status === 'closed').length,
-      // @ts-ignore
-      totalPnL: data.reduce((sum, t) => sum + (t.profit_loss || 0), 0),
+      openTrades: data.filter((t: any) => t.status === 'open').length,
+      closedTrades: data.filter((t: any) => t.status === 'closed').length,
+      totalPnL: data.reduce((sum: number, t: any) => sum + (t.profit_loss || 0), 0),
       winRate: 0,
       avgWin: 0,
       avgLoss: 0,
@@ -185,51 +166,35 @@ export class TradeService {
       commonMarketSentiment: ''
     };
 
-    // @ts-ignore
-    const closedTrades = data.filter(t => t.status === 'closed' && t.profit_loss !== null && t.profit_loss !== undefined);
-    // @ts-ignore
-    const winningTrades = closedTrades.filter(t => t.profit_loss > 0);
-    // @ts-ignore
-    const losingTrades = closedTrades.filter(t => t.profit_loss < 0);
+    const closedTrades = data.filter((t: any) => t.status === 'closed' && t.profit_loss !== null);
+    const winningTrades = closedTrades.filter((t: any) => t.profit_loss > 0);
+    const losingTrades = closedTrades.filter((t: any) => t.profit_loss < 0);
 
     if (closedTrades.length > 0) {
       stats.winRate = (winningTrades.length / closedTrades.length) * 100;
     }
 
     if (winningTrades.length > 0) {
-      // @ts-ignore
-      const totalWinAmount = winningTrades.reduce((sum, t) => sum + t.profit_loss, 0);
+      const totalWinAmount = winningTrades.reduce((sum: number, t: any) => sum + t.profit_loss, 0);
       stats.avgWin = totalWinAmount / winningTrades.length;
     }
 
     if (losingTrades.length > 0) {
-      // @ts-ignore
-      const totalLossAmount = losingTrades.reduce((sum, t) => sum + Math.abs(t.profit_loss), 0);
+      const totalLossAmount = losingTrades.reduce((sum: number, t: any) => sum + Math.abs(t.profit_loss), 0);
       stats.avgLoss = totalLossAmount / losingTrades.length;
     }
 
     const moodCounts: { [key: string]: number } = {};
-    data.forEach(trade => {
-      // @ts-ignore
+    data.forEach((trade: any) => {
       if (trade.mood) {
-        // @ts-ignore
         moodCounts[trade.mood] = (moodCounts[trade.mood] || 0) + 1;
       }
     });
     stats.moodStats = moodCounts;
 
-    // @ts-ignore
-    const ratedTrades = data.filter(t => t.performance_rating);
-    if (ratedTrades.length > 0) {
-      // @ts-ignore
-      stats.avgPerformanceRating = ratedTrades.reduce((sum, t) => sum + t.performance_rating, 0) / ratedTrades.length;
-    }
-
     const sentimentCounts: { [key: string]: number } = {};
-    data.forEach(trade => {
-      // @ts-ignore
+    data.forEach((trade: any) => {
       if (trade.market_sentiment) {
-        // @ts-ignore
         sentimentCounts[trade.market_sentiment] = (sentimentCounts[trade.market_sentiment] || 0) + 1;
       }
     });
@@ -254,14 +219,11 @@ export class TradeService {
       .eq('user_id', userId);
 
     if (error) throw error;
-    // @ts-ignore
-    const closedTrades = data.filter(t => t.status === 'closed');
-    // @ts-ignore
-    const openTrades = data.filter(t => t.status === 'open');
-    // @ts-ignore
-    const realizedPnL = closedTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
-    // @ts-ignore
-    const unrealizedPnL = openTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
+    
+    const closedTrades = data.filter((t: any) => t.status === 'closed');
+    const openTrades = data.filter((t: any) => t.status === 'open');
+    const realizedPnL = closedTrades.reduce((sum: number, t: any) => sum + (t.profit_loss || 0), 0);
+    const unrealizedPnL = openTrades.reduce((sum: number, t: any) => sum + (t.profit_loss || 0), 0);
 
     return {
       balance: realizedPnL,
@@ -288,29 +250,20 @@ export class TradeService {
     const performanceByMood: { [mood: string]: { totalPnL: number; count: number } } = {};
     const performanceBySentiment: { [sentiment: string]: { totalPnL: number; count: number } } = {};
 
-    data.forEach(trade => {
-      // @ts-ignore
+    data.forEach((trade: any) => {
       if (trade.mood) {
-        // @ts-ignore
         if (!performanceByMood[trade.mood]) {
-          // @ts-ignore
           performanceByMood[trade.mood] = { totalPnL: 0, count: 0 };
         }
-        // @ts-ignore
         performanceByMood[trade.mood].totalPnL += trade.profit_loss;
-        // @ts-ignore
         performanceByMood[trade.mood].count += 1;
       }
-      // @ts-ignore
+
       if (trade.market_sentiment) {
-        // @ts-ignore
         if (!performanceBySentiment[trade.market_sentiment]) {
-          // @ts-ignore
           performanceBySentiment[trade.market_sentiment] = { totalPnL: 0, count: 0 };
         }
-        // @ts-ignore
         performanceBySentiment[trade.market_sentiment].totalPnL += trade.profit_loss;
-        // @ts-ignore
         performanceBySentiment[trade.market_sentiment].count += 1;
       }
     });
@@ -333,13 +286,10 @@ export class TradeService {
       };
     });
 
-    // @ts-ignore
     const recentLessons = data
-      // @ts-ignore
-      .filter(trade => trade.lessons_learned && trade.lessons_learned.trim())
+      .filter((trade: any) => trade.lessons_learned && trade.lessons_learned.trim())
       .slice(0, 10)
-      // @ts-ignore
-      .map(trade => trade.lessons_learned);
+      .map((trade: any) => trade.lessons_learned);
 
     return {
       performanceByMood: finalMoodData,
@@ -348,66 +298,8 @@ export class TradeService {
     };
   }
 
-  // FIXED: Calculate P&L using ProfessionalPipCalculator (proper pip value calculation)
-  private static calculateProfitLoss(trade: {
-    status?: string;
-    side: string;
-    symbol?: string;
-    quantity: number;
-    entry_price: number;
-    exit_price?: number | null;
-    fees?: number | null;
-    commission?: number | null;
-  }): number {
-    if (trade.status !== 'closed' || !trade.exit_price || !trade.symbol) {
-      return 0;
-    }
-
-    const lotSize = trade.quantity / 100000; // Convert units to standard lots
-    const isLong = trade.side === 'buy' || trade.side === 'long';
-    
-    let grossPnL: number;
-    
-    if (isLong) {
-      // LONG POSITION: Profit when price goes UP
-      if (trade.exit_price > trade.entry_price) {
-        grossPnL = ProfessionalPipCalculator.calculatePotentialProfit(
-          trade.symbol, 
-          lotSize, 
-          trade.entry_price, 
-          trade.exit_price
-        );
-      } else {
-        grossPnL = -ProfessionalPipCalculator.calculateRiskAmount(
-          trade.symbol, 
-          lotSize, 
-          trade.entry_price, 
-          trade.exit_price
-        );
-      }
-    } else {
-      // SHORT POSITION: Profit when price goes DOWN
-      if (trade.exit_price < trade.entry_price) {
-        grossPnL = ProfessionalPipCalculator.calculatePotentialProfit(
-          trade.symbol, 
-          lotSize, 
-          trade.exit_price,
-          trade.entry_price
-        );
-      } else {
-        grossPnL = -ProfessionalPipCalculator.calculateRiskAmount(
-          trade.symbol, 
-          lotSize, 
-          trade.exit_price,
-          trade.entry_price
-        );
-      }
-    }
-
-    const totalCosts = (trade.fees || 0) + (trade.commission || 0);
-    return grossPnL - totalCosts;
-  }
-
+  // REMOVED: calculateProfitLoss() - Users enter P&L directly from broker
+  
   private static calculateRiskRewardRatio(
     entryPrice: number,
     stopLoss: number,

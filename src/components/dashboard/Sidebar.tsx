@@ -321,7 +321,10 @@ export const Sidebar = memo(() => {
         />
 
         {/* Sign out */}
-        <SignOutButton onSignOut={handleSignOut} />
+        <div className="text-black">
+                  <SignOutButton onSignOut={handleSignOut}/>
+        </div>
+
       </div>
     </>
   );

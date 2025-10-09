@@ -146,16 +146,8 @@ export const TradeDetailsView = memo(function TradeDetailsView({
   }, []);
 
   const formatQuantity = useCallback((quantity: number) => {
-    if (quantity >= 100000) {
-      return `${(quantity / 100000).toFixed(2)} lots (${quantity.toLocaleString()} units)`;
-    }
-    if (quantity >= 10000) {
-      return `${(quantity / 10000).toFixed(1)} mini lots (${quantity.toLocaleString()} units)`;
-    }
-    if (quantity >= 1000) {
-      return `${(quantity / 1000).toFixed(1)} micro lots (${quantity.toLocaleString()} units)`;
-    }
-    return `${quantity.toLocaleString()} units`;
+    // Quantity is stored as lot size directly (e.g., 0.01, 0.1, 1.0)
+    return `${quantity.toFixed(2)} lots`;
   }, []);
 
   const getPipDistance = useCallback((price1: number, price2: number) => {
@@ -212,23 +204,12 @@ export const TradeDetailsView = memo(function TradeDetailsView({
     return minutes > 0 ? `${prefix} ${minutes} minutes${suffix}` : "Just logged";
   }, [currentTrade.status, currentTrade.created_at, currentTrade.entry_date, currentTrade.updated_at, currentTime]);
 
-  const pnlPercentage = useMemo(() => {
-    if (!currentTrade.profit_loss) return null;
-    const positionValue = currentTrade.entry_price * currentTrade.quantity;
-    return ((currentTrade.profit_loss / positionValue) * 100).toFixed(2);
-  }, [currentTrade.profit_loss, currentTrade.entry_price, currentTrade.quantity]);
-
   const riskReward = useMemo(() => {
     if (!currentTrade.stop_loss || !currentTrade.take_profit || !currentTrade.entry_price) return null;
     const risk = Math.abs(currentTrade.entry_price - currentTrade.stop_loss);
     const reward = Math.abs(currentTrade.take_profit - currentTrade.entry_price);
     return risk > 0 ? (reward / risk).toFixed(2) : null;
   }, [currentTrade.stop_loss, currentTrade.take_profit, currentTrade.entry_price]);
-
-  const positionValue = useMemo(() => 
-    CURRENCY_FORMATTER.format(currentTrade.entry_price * currentTrade.quantity),
-    [currentTrade.entry_price, currentTrade.quantity]
-  );
 
   const handleTradeUpdated = useCallback((updatedTrade: Trade) => {
     setCurrentTrade(updatedTrade);
@@ -349,13 +330,11 @@ export const TradeDetailsView = memo(function TradeDetailsView({
                 <p className="text-3xl font-bold mb-2 text-white">
                   {CURRENCY_FORMATTER.format(currentTrade.profit_loss)}
                 </p>
-                {pnlPercentage && (
-                  <p className={`text-lg ${
-                    currentTrade.profit_loss >= 0 ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
-                    {currentTrade.profit_loss >= 0 ? '+' : ''}{pnlPercentage}%
-                  </p>
-                )}
+                <p className={`text-sm ${
+                  currentTrade.profit_loss >= 0 ? 'text-emerald-400' : 'text-red-400'
+                }`}>
+                  {currentTrade.profit_loss >= 0 ? 'Profit' : 'Loss'}
+                </p>
               </div>
             ) : (
               <div className="text-center p-6 rounded-lg bg-blue-500/5 border border-blue-500/20">
@@ -368,11 +347,6 @@ export const TradeDetailsView = memo(function TradeDetailsView({
                 </p>
               </div>
             )}
-
-            <div className="text-center p-4 border border-slate-700 rounded-lg bg-slate-800/30">
-              <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">Position Value</p>
-              <p className="text-xl font-bold text-white">{positionValue}</p>
-            </div>
           </CardContent>
         </Card>
       </div>

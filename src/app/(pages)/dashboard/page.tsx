@@ -13,6 +13,7 @@ import { TrendingUp, TrendingDown, Plus, BarChart3, Wallet } from 'lucide-react'
 import Link from 'next/link';
 import { useState } from 'react';
 import { Toaster } from '@/components/ui/sonner';
+import { MarketStatus } from '@/components/dashboard/MarketStatus';
 
 export default function DashboardPage() {
   const { trades, loading, stats } = useTrades();
@@ -98,13 +99,13 @@ export default function DashboardPage() {
             Edit Balance
           </Button>
 
-          <Link href="./dashboard/trades/new">
+          <Link href="/dashboard/trades/new">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Add Trade
             </Button>
           </Link>
-          <Link href="./dashboard/analytics">
+          <Link href="/dashboard/analytics">
             <Button variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
@@ -176,6 +177,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* P&L Chart */}
         <div className="lg:col-span-2">
+            
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -189,8 +191,14 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <PnLChart trades={trades} />
+              
+   
             </CardContent>
           </Card>
+        <div className="pt-8 border-t space-y-2">
+                <RecentTradesCard trades={recentTrades} />
+          </div>
+         
         </div>
 
         {/* Right Sidebar */}
@@ -251,7 +259,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="pt-2 border-t">
-                <Link href="./dashboard/trades">
+                <Link href="/dashboard/trades">
                   <Button variant="outline" className="w-full">
                     View All Trades
                   </Button>
@@ -298,7 +306,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="pt-2 border-t">
-                <Link href="./dashboard/balance">
+                <Link href="/dashboard/balance">
                   <Button variant="outline" size="sm" className="w-full">
                     <Wallet className="h-3 w-3 mr-1" />
                     Manage Balance
@@ -308,41 +316,12 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Market Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  US Markets
-                </span>
-                <div className="flex items-center">
-                  <div className="h-2 w-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm font-medium text-green-600">Open</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">S&P 500</span>
-                  <span className="text-green-600">+0.45%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">NASDAQ</span>
-                  <span className="text-green-600">+0.72%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">VIX</span>
-                  <span className="text-red-600">-2.34%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    
+            
+                <MarketStatus />
         </div>
       </div>
 
-      <RecentTradesCard trades={recentTrades} />
     </div>
   );
 }

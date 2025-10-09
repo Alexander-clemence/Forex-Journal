@@ -8,7 +8,7 @@ import { TradeService } from '@/lib/services/tradeService';
 // Lazy load the TradeEntryForm component
 const TradeEntryForm = lazy(() => 
   import('@/components/TradeEntryform/TradeEntryForm').then(module => ({
-    default: module.TradeEntryForm
+    default: module.SimpleTradeForm
   }))
 );
 

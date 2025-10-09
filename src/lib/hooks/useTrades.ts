@@ -107,11 +107,34 @@ export function useTrades() {
     const losingTrades = closedTrades.filter(trade => (trade.profit_loss || 0) < 0);
     
     const winRate = closedTrades.length > 0 ? (winningTrades.length / closedTrades.length) * 100 : 0;
-    const avgWin = winningTrades.length > 0 ? winningTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0) / winningTrades.length : 0;
-    const avgLoss = losingTrades.length > 0 ? losingTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0) / losingTrades.length : 0;
     
-    const bestTrade = Math.max(...closedTrades.map(trade => trade.profit_loss || 0));
-    const worstTrade = Math.min(...closedTrades.map(trade => trade.profit_loss || 0));
+    // Average win calculation (already correct - positive numbers)
+    const avgWin = winningTrades.length > 0 
+      ? winningTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0) / winningTrades.length 
+      : 0;
+    
+    // Average loss calculation - use Math.abs() to return positive number
+    const avgLoss = losingTrades.length > 0 
+      ? losingTrades.reduce((sum, trade) => sum + Math.abs(trade.profit_loss || 0), 0) / losingTrades.length 
+      : 0;
+    
+    // FIXED: Best trade = highest positive value (only from winning trades)
+    const bestTrade = winningTrades.length > 0 
+      ? Math.max(...winningTrades.map(trade => trade.profit_loss || 0))
+      : 0;
+    
+    // FIXED: Worst trade = most negative value (only from losing trades)
+    const worstTrade = losingTrades.length > 0
+      ? Math.min(...losingTrades.map(trade => trade.profit_loss || 0))
+      : 0;
+
+    // Calculate today's P&L
+    const today = new Date().toISOString().split('T')[0];
+    const todayTrades = closedTrades.filter(trade => {
+      const tradeDate = trade.exit_date || trade.entry_date;
+      return tradeDate && tradeDate.split('T')[0] === today;
+    });
+    const todayPnL = todayTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0);
 
     return {
       totalTrades: trades.length,
@@ -120,10 +143,10 @@ export function useTrades() {
       totalPnL,
       winRate,
       avgWin,
-      avgLoss,
-      bestTrade: bestTrade === -Infinity ? 0 : bestTrade,
-      worstTrade: worstTrade === Infinity ? 0 : worstTrade,
-      todayPnL: 0 // Calculate based on today's trades
+      avgLoss, // Returns positive number (e.g., 45.50)
+      bestTrade, // Returns 0 if no winning trades
+      worstTrade, // Returns 0 if no losing trades, otherwise negative number
+      todayPnL
     };
   };
 

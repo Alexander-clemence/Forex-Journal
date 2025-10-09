@@ -26,16 +26,6 @@ interface HeaderProps {
   onMobileMenuToggle?: () => void;
 }
 
-// Memoized Logo Component
-const Logo = memo(() => (
-  <Link href="/" className="flex items-center space-x-2">
-    <TrendingUp className="h-6 w-6 text-blue-600" />
-    <span className="font-bold text-xl text-gray-900 dark:text-white">
-      Trading Journal
-    </span>
-  </Link>
-));
-Logo.displayName = 'Logo';
 
 // Memoized Mobile Menu Button
 const MobileMenuButton = memo(({ onClick }: { onClick: () => void }) => (
@@ -109,8 +99,7 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
           {onMobileMenuToggle && (
             <MobileMenuButton onClick={handleMobileMenuToggle} />
           )}
-         
-          <Logo />
+
         </div>
 
         {/* Right side - Theme toggle and user menu */}
