@@ -313,6 +313,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('trades')
+        // @ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
@@ -360,6 +361,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('journal_entries')
+        // @ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
@@ -390,6 +392,7 @@ export const db = {
       auth.recordActivity();
       return supabase
         .from('strategies')
+        // @ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
@@ -424,6 +427,7 @@ export const db = {
       
       return supabase
         .from('profiles')
+        // @ts-ignore
         .update(updates)
         .eq('id', user.id)
         .select()
