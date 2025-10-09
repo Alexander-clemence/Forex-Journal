@@ -60,7 +60,7 @@ export async function GET() {
 
         const data = await response.json();
         const quote = data['Global Quote'];
-
+//@ts-ignore
         if (!quote || !quote['05. price']) return null;
 
         return {

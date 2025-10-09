@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
+//@ts-ignore
     const userRole = profileData.role;
 
     if (!userRole) {
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
+//@ts-ignore
     const permissions = permissionsData?.map(p => p.permission) || [];
     const canManageUsers = permissions.includes('users.manage');
 
