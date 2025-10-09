@@ -129,6 +129,7 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
 
                   <div className="space-y-2">
                     <Label htmlFor="status">Status *</Label>
+                    {/* @ts-ignore */}
                     <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -261,6 +262,7 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
                           type="number" 
                           step="0.01" 
                           value={formData.profit_loss !== undefined ? formData.profit_loss : ''} 
+                          //@ts-ignore
                           onChange={(e) => handleInputChange('profit_loss', e.target.value ? parseFloat(e.target.value) : undefined)} 
                           placeholder="100.00 or -50.00" 
                         />
