@@ -212,6 +212,7 @@ export default function AdminUserManagement() {
     try {
       const { error } = await supabase
         .from('profiles')
+    // @ts-ignore
         .update({ role: newRole })
         .eq('id', userId);
 
