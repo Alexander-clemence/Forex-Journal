@@ -1,118 +1,231 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { Database } from '@/lib/types/database';
-import { useState, useEffect } from 'react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// ============================================================================
+// ENVIRONMENT VALIDATION
+// ============================================================================
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+}
 
-// Inactivity Timer Configuration - 10 MINUTES
-const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
-let inactivityTimer: NodeJS.Timeout | null = null;
-let isInactivityListenerActive = false;
-let timeoutCallback: (() => void) | null = null;
+if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
+}
 
-// Activity events to track
-const ACTIVITY_EVENTS = [
-  'mousedown',
-  'mousemove',
-  'keypress',
-  'scroll',
-  'touchstart',
-  'click'
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Inactivity Timer Management
-export const inactivityManager = {
-  // Start the inactivity timer
-  start: (onTimeout: () => void) => {
-    if (typeof window === 'undefined') return; // Server-side check
+// ============================================================================
+// BROWSER CLIENT - SINGLETON WITH SSR SUPPORT
+// ============================================================================
+
+export const supabase = createBrowserClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+);
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+type ActivityEvent = 'mousedown' | 'keydown' | 'touchstart' | 'scroll';
+
+interface InactivityConfig {
+  timeout?: number; // milliseconds
+  throttle?: number; // milliseconds
+  onWarning?: (secondsRemaining: number) => void;
+  warningTime?: number; // seconds before timeout to show warning
+}
+
+// ============================================================================
+// INACTIVITY MANAGER - ENHANCED WITH WARNING SYSTEM
+// ============================================================================
+
+const DEFAULT_INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const DEFAULT_ACTIVITY_THROTTLE = 2000; // 2 seconds
+const DEFAULT_WARNING_TIME = 60; // 1 minute before timeout
+
+class InactivityManager {
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private warningTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastActivityTime = Date.now();
+  private isListenerActive = false;
+  private timeoutCallback: (() => void) | null = null;
+  private warningCallback: ((secondsRemaining: number) => void) | null = null;
+  
+  private config: Required<InactivityConfig> = {
+    timeout: DEFAULT_INACTIVITY_TIMEOUT,
+    throttle: DEFAULT_ACTIVITY_THROTTLE,
+    onWarning: () => {},
+    warningTime: DEFAULT_WARNING_TIME,
+  };
+
+  private readonly ACTIVITY_EVENTS: ActivityEvent[] = [
+    'mousedown',
+    'keydown', 
+    'touchstart',
+    'scroll'
+  ];
+
+  private throttledActivityHandler = () => {
+    const now = Date.now();
     
-    // Store the callback
-    timeoutCallback = onTimeout;
-    
-    // Clear any existing timer
-    inactivityManager.stop();
-    
-    // Set up the timeout
-    inactivityTimer = setTimeout(() => {
-      console.log('User inactive for 10 minutes, signing out...');
-      if (timeoutCallback) {
-        timeoutCallback();
-      }
-    }, INACTIVITY_TIMEOUT);
-    
-    // Add activity listeners if not already active
-    if (!isInactivityListenerActive) {
-      ACTIVITY_EVENTS.forEach(event => {
-        document.addEventListener(event, inactivityManager.resetTimer, true);
-      });
-      isInactivityListenerActive = true;
+    if (now - this.lastActivityTime >= this.config.throttle) {
+      this.lastActivityTime = now;
+      this.reset();
     }
-  },
+  };
 
-  // Reset the timer on user activity
-  resetTimer: () => {
-    if (inactivityTimer && timeoutCallback) {
-      clearTimeout(inactivityTimer);
-      
-      // Restart the timer with the stored callback
-      inactivityTimer = setTimeout(() => {
-        console.log('User inactive for 10 minutes, signing out...');
-        if (timeoutCallback) {
-          timeoutCallback();
+  private reset() {
+    if (!this.timeoutCallback) return;
+    
+    // Clear existing timers
+    if (this.timer) clearTimeout(this.timer);
+    if (this.warningTimer) clearTimeout(this.warningTimer);
+    
+    // Set warning timer
+    const warningMs = this.config.timeout - (this.config.warningTime * 1000);
+    if (warningMs > 0 && this.warningCallback) {
+      this.warningTimer = setTimeout(() => {
+        if (this.warningCallback) {
+          this.warningCallback(this.config.warningTime);
         }
-      }, INACTIVITY_TIMEOUT);
+      }, warningMs);
     }
-  },
+    
+    // Set main timeout timer
+    this.timer = setTimeout(() => {
+      if (this.timeoutCallback) {
+        console.log('[Inactivity] User inactive, executing timeout callback');
+        this.timeoutCallback();
+      }
+    }, this.config.timeout);
+  }
 
-  // Stop the inactivity timer
-  stop: () => {
-    if (inactivityTimer) {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = null;
+  start(onTimeout: () => void, config?: InactivityConfig) {
+    if (typeof window === 'undefined') return;
+    
+    // Update configuration
+    if (config) {
+      this.config = { ...this.config, ...config };
     }
     
-    // Clear the callback
-    timeoutCallback = null;
+    this.timeoutCallback = onTimeout;
+    this.warningCallback = config?.onWarning || null;
+    this.lastActivityTime = Date.now();
     
-    // Remove activity listeners
-    if (isInactivityListenerActive && typeof window !== 'undefined') {
-      ACTIVITY_EVENTS.forEach(event => {
-        document.removeEventListener(event, inactivityManager.resetTimer, true);
+    // Clear any existing setup
+    this.stop();
+    
+    // Start the timeout
+    this.reset();
+    
+    // Add activity listeners
+    if (!this.isListenerActive) {
+      this.ACTIVITY_EVENTS.forEach(event => {
+        document.addEventListener(
+          event, 
+          this.throttledActivityHandler, 
+          { passive: true, capture: true }
+        );
       });
-      isInactivityListenerActive = false;
+      this.isListenerActive = true;
     }
-  },
+  }
 
-  // Check if timer is active
-  isActive: () => inactivityTimer !== null
-};
+  stop() {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    
+    if (this.warningTimer) {
+      clearTimeout(this.warningTimer);
+      this.warningTimer = null;
+    }
+    
+    this.timeoutCallback = null;
+    this.warningCallback = null;
+    
+    if (this.isListenerActive && typeof window !== 'undefined') {
+      this.ACTIVITY_EVENTS.forEach(event => {
+        document.removeEventListener(event, this.throttledActivityHandler, true);
+      });
+      this.isListenerActive = false;
+    }
+  }
 
-// Enhanced Auth helpers (CLIENT-SIDE ONLY)
+  isActive() {
+    return this.timer !== null;
+  }
+
+  manualReset() {
+    if (this.isActive()) {
+      this.reset();
+    }
+  }
+
+  getLastActivityTime() {
+    return this.lastActivityTime;
+  }
+}
+
+export const inactivityManager = new InactivityManager();
+
+// ============================================================================
+// STORAGE CLEANUP UTILITY
+// ============================================================================
+
+function cleanupSupabaseStorage() {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    // Only clear Supabase-specific items from localStorage
+    const keys = Object.keys(localStorage);
+    const supabaseKeys = keys.filter(key => 
+      key.startsWith(`sb-${supabaseUrl.split('//')[1]?.split('.')[0] || 'sb'}`)
+    );
+    
+    supabaseKeys.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn('[Storage] Failed to remove key:', key);
+      }
+    });
+  } catch (error) {
+    console.error('[Storage] Cleanup failed:', error);
+  }
+}
+
+// ============================================================================
+// AUTH HELPERS - TYPE-SAFE & OPTIMIZED
+// ============================================================================
+
 export const auth = {
-  // Sign up (regular user registration only)
+  /**
+   * Sign up a new user
+   */
   signUp: async (email: string, password: string, displayName?: string) => {
-    return await supabase.auth.signUp({
+    const result = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           display_name: displayName || email.split('@')[0],
-          role: 'user' // Regular users always get 'user' role
-        }
+          role: 'user'
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`
       }
     });
+    
+    return result;
   },
 
-  // Sign in
+  /**
+   * Sign in with email and password
+   */
   signIn: async (email: string, password: string) => {
     const result = await supabase.auth.signInWithPassword({
       email,
@@ -120,7 +233,7 @@ export const auth = {
     });
     
     // Start inactivity timer on successful sign in
-    if (result.data.user && !result.error) {
+    if (result.data.session && !result.error) {
       inactivityManager.start(() => {
         auth.signOutDueToInactivity();
       });
@@ -129,103 +242,91 @@ export const auth = {
     return result;
   },
 
-  // Standard sign out (current session only)
+  /**
+   * Standard sign out (current device only)
+   */
   signOut: async () => {
-    // Stop inactivity timer
     inactivityManager.stop();
     
-    // Sign out from current session
     const result = await supabase.auth.signOut();
     
-    // Clear local storage (but be selective - don't clear everything)
-    if (typeof window !== 'undefined') {
-      // Only clear Supabase-related items
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('supabase.')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      sessionStorage.clear();
-    }
+    cleanupSupabaseStorage();
     
     return result;
   },
 
-  // Global sign out (all sessions/devices)
+  /**
+   * Global sign out (all devices)
+   */
   signOutEverywhere: async () => {
-    // Stop inactivity timer
     inactivityManager.stop();
     
-    // Sign out from all devices
     const result = await supabase.auth.signOut({ scope: 'global' });
     
-    // Clear local storage
-    if (typeof window !== 'undefined') {
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('supabase.')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      sessionStorage.clear();
-    }
+    cleanupSupabaseStorage();
     
     return result;
   },
 
-  // Sign out due to inactivity
+  /**
+   * Sign out due to inactivity with user notification
+   */
   signOutDueToInactivity: async () => {
-    console.log('Signing out due to inactivity...');
-    
-    // Stop inactivity timer
+    console.log('[Auth] Signing out due to inactivity');
     inactivityManager.stop();
     
-    // Sign out from current session
     await supabase.auth.signOut();
+    cleanupSupabaseStorage();
     
-    // Clear local storage
     if (typeof window !== 'undefined') {
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('supabase.')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      sessionStorage.clear();
+      // Use a more modern notification approach
+      // You should replace this with a toast/modal in your app
+      const message = 'You have been signed out due to inactivity.';
       
-      // Show notification and redirect
-      alert('You have been signed out due to 10 minutes of inactivity.');
+      // Store message for display on login page
+      sessionStorage.setItem('auth_message', JSON.stringify({
+        type: 'info',
+        message,
+        timestamp: Date.now()
+      }));
+      
       window.location.href = '/login';
     }
   },
 
-  // Get current user
-  getCurrentUser: async () => {
+  /**
+   * Get current user (makes API call - use sparingly)
+   * Prefer getSession() for better performance
+   */
+  getUser: async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
     return { user, error };
   },
 
-  // Get current session
-  getCurrentSession: async () => {
+  /**
+   * Get current session (client-side only, fast)
+   * Use this for most auth checks in client components
+   */
+  getSession: async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
     return { session, error };
   },
 
-  // Get user profile
-  getUserProfile: async (userId?: string) => {
+  /**
+   * Get user profile from database
+   */
+  getProfile: async (userId?: string) => {
     let targetUserId = userId;
     
     if (!targetUserId) {
-      const { user } = await auth.getCurrentUser();
-      if (!user) throw new Error('No authenticated user');
-      targetUserId = user.id;
+      const { session } = await auth.getSession();
+      if (!session?.user) {
+        return { 
+          profile: null, 
+          error: new Error('No authenticated user') 
+        };
+      }
+      targetUserId = session.user.id;
     }
 
     const { data, error } = await supabase
@@ -237,131 +338,153 @@ export const auth = {
     return { profile: data, error };
   },
 
-  // Listen to auth changes
+  /**
+   * Listen to auth state changes
+   */
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
-    return supabase.auth.onAuthStateChange((event, session) => {
-      // Handle inactivity timer based on auth state
-      if (event === 'SIGNED_IN' && session) {
-        inactivityManager.start(() => {
-          auth.signOutDueToInactivity();
-        });
-      } else if (event === 'SIGNED_OUT') {
-        inactivityManager.stop();
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Start/stop inactivity manager based on auth state
+        if (event === 'SIGNED_IN' && session) {
+          inactivityManager.start(() => {
+            auth.signOutDueToInactivity();
+          });
+        } else if (event === 'SIGNED_OUT') {
+          inactivityManager.stop();
+        }
+        
+        callback(event, session);
       }
-      
-      // Call the original callback
-      callback(event, session);
-    });
+    );
+    
+    return subscription;
   },
 
-  // Reset password
+  /**
+   * Send password reset email
+   */
   resetPassword: async (email: string) => {
+    if (typeof window === 'undefined') {
+      throw new Error('resetPassword can only be called in browser context');
+    }
+    
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: `${window.location.origin}/auth/reset-password`
     });
   },
 
-  // Refresh session and reset inactivity timer
+  /**
+   * Update password (requires current session)
+   */
+  updatePassword: async (newPassword: string) => {
+    return await supabase.auth.updateUser({
+      password: newPassword
+    });
+  },
+
+  /**
+   * Refresh the current session
+   */
   refreshSession: async () => {
     const { data, error } = await supabase.auth.refreshSession();
     
-    // Reset inactivity timer on successful refresh
     if (data.session && !error) {
-      inactivityManager.resetTimer();
+      inactivityManager.manualReset();
     }
     
     return { data, error };
   },
 
-  // Manual activity trigger (useful for API calls, etc.)
-  recordActivity: () => {
-    inactivityManager.resetTimer();
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated: async () => {
+    const { session } = await auth.getSession();
+    return !!session;
   }
 };
 
-// Database helpers
+// ============================================================================
+// DATABASE HELPERS - TYPE-SAFE
+// ============================================================================
+
+type TradeInsert = Database['public']['Tables']['trades']['Insert'];
+type TradeUpdate = Database['public']['Tables']['trades']['Update'];
+type JournalInsert = Database['public']['Tables']['journal_entries']['Insert'];
+type JournalUpdate = Database['public']['Tables']['journal_entries']['Update'];
+type StrategyInsert = Database['public']['Tables']['strategies']['Insert'];
+type StrategyUpdate = Database['public']['Tables']['strategies']['Update'];
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
+
 export const db = {
-  // Trades
   trades: {
-    getAll: () => {
-      auth.recordActivity();
-      return supabase
+    getAll: async () => {
+      return await supabase
         .from('trades')
         .select('*')
         .order('entry_date', { ascending: false });
     },
 
-    getById: (id: string) => {
-      auth.recordActivity();
-      return supabase
+    getById: async (id: string) => {
+      return await supabase
         .from('trades')
         .select('*')
         .eq('id', id)
         .single();
     },
 
-    create: (trade: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('trades')
+    create: async (trade: TradeInsert) => {
+      return await supabase
+        .from('trades')//@ts-ignore
         .insert(trade)
         .select()
         .single();
     },
 
-    update: (id: string, updates: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('trades')
-        // @ts-ignore
+    update: async (id: string, updates: TradeUpdate) => {
+      return await supabase
+        .from('trades')//@ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
         .single();
     },
 
-    delete: (id: string) => {
-      auth.recordActivity();
-      return supabase
+    delete: async (id: string) => {
+      return await supabase
         .from('trades')
         .delete()
         .eq('id', id);
     }
   },
 
-  // Journal entries
   journal: {
-    getAll: () => {
-      auth.recordActivity();
-      return supabase
+    getAll: async () => {
+      return await supabase
         .from('journal_entries')
         .select('*')
         .order('entry_date', { ascending: false });
     },
 
-    getByDate: (date: string) => {
-      auth.recordActivity();
-      return supabase
+    getByDate: async (date: string) => {
+      return await supabase
         .from('journal_entries')
         .select('*')
         .eq('entry_date', date)
         .single();
     },
 
-    create: (entry: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('journal_entries')
+    create: async (entry: JournalInsert) => {
+      return await supabase
+        .from('journal_entries')//@ts-ignore
         .insert(entry)
         .select()
         .single();
     },
 
-    update: (id: string, updates: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('journal_entries')
-        // @ts-ignore
+    update: async (id: string, updates: JournalUpdate) => {
+      return await supabase
+        .from('journal_entries')//@ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
@@ -369,150 +492,173 @@ export const db = {
     }
   },
 
-  // Strategies
   strategies: {
-    getAll: () => {
-      auth.recordActivity();
-      return supabase
+    getAll: async () => {
+      return await supabase
         .from('strategies')
         .select('*')
         .order('name');
     },
 
-    create: (strategy: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('strategies')
+    create: async (strategy: StrategyInsert) => {
+      return await supabase
+        .from('strategies')//@ts-ignore
         .insert(strategy)
         .select()
         .single();
     },
 
-    update: (id: string, updates: any) => {
-      auth.recordActivity();
-      return supabase
-        .from('strategies')
-        // @ts-ignore
+    update: async (id: string, updates: StrategyUpdate) => {
+      return await supabase
+        .from('strategies')//@ts-ignore
         .update(updates)
         .eq('id', id)
         .select()
         .single();
     },
 
-    delete: (id: string) => {
-      auth.recordActivity();
-      return supabase
+    delete: async (id: string) => {
+      return await supabase
         .from('strategies')
         .delete()
         .eq('id', id);
     }
   },
 
-  // Profile
   profile: {
-    get: () => {
-      auth.recordActivity();
-      return supabase
+    get: async () => {
+      const { session } = await auth.getSession();
+      if (!session?.user) {
+        return {
+          data: null,
+          error: new Error('User not authenticated')
+        };
+      }
+      
+      return await supabase
         .from('profiles')
         .select('*')
+        .eq('id', session.user.id)
         .single();
     },
 
-    update: async (updates: any) => {
-      auth.recordActivity();
-      const { user } = await auth.getCurrentUser();
-      if (!user) {
-        throw new Error('User not authenticated');
+    update: async (updates: ProfileUpdate) => {
+      const { session } = await auth.getSession();
+      if (!session?.user) {
+        return {
+          data: null,
+          error: new Error('User not authenticated')
+        };
       }
       
-      return supabase
+      return await supabase
         .from('profiles')
-        // @ts-ignore
+        //@ts-ignore
         .update(updates)
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .select()
         .single();
     }
   }
 };
 
-// Real-time subscriptions
+// ============================================================================
+// REAL-TIME SUBSCRIPTIONS - TYPE-SAFE
+// ============================================================================
+
+type RealtimeCallback = (payload: any) => void;
+
 export const subscriptions = {
-  trades: (callback: (payload: any) => void) => {
-    auth.recordActivity();
+  /**
+   * Subscribe to trades table changes
+   */
+  trades: (callback: RealtimeCallback) => {
     return supabase
       .channel('trades_changes')
-      .on('postgres_changes', 
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'trades' },
-        (payload) => {
-          auth.recordActivity();
-          callback(payload);
-        }
+        callback
       )
       .subscribe();
   },
 
-  journal: (callback: (payload: any) => void) => {
-    auth.recordActivity();
+  /**
+   * Subscribe to journal entries table changes
+   */
+  journal: (callback: RealtimeCallback) => {
     return supabase
       .channel('journal_changes')
-      .on('postgres_changes',
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'journal_entries' },
-        (payload) => {
-          auth.recordActivity();
-          callback(payload);
-        }
+        callback
       )
       .subscribe();
+  },
+
+  /**
+   * Unsubscribe from a channel
+   */
+  unsubscribe: async (channel: ReturnType<typeof supabase.channel>) => {
+    return await supabase.removeChannel(channel);
+  },
+
+  /**
+   * Unsubscribe from all channels
+   */
+  unsubscribeAll: () => {
+    return supabase.removeAllChannels();
   }
 };
 
-// React Hook for using enhanced auth features
-export function useEnhancedAuth() {
-  const [user, setUser] = useState<any>(null);
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 
-  useEffect(() => {
-    // Get initial session
-    auth.getCurrentSession().then(({ session }) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-    });
+export const utils = {
+  /**
+   * Check if code is running in browser
+   */
+  isBrowser: () => typeof window !== 'undefined',
 
-    // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-      inactivityManager.stop();
-    };
-  }, []);
-
-  const signOut = async (global = false) => {
+  /**
+   * Get auth message from session storage (for post-redirect messages)
+   */
+  getAuthMessage: () => {
+    if (typeof window === 'undefined') return null;
+    
     try {
-      if (global) {
-        await auth.signOutEverywhere();
-      } else {
-        await auth.signOut();
+      const message = sessionStorage.getItem('auth_message');
+      if (message) {
+        sessionStorage.removeItem('auth_message');
+        return JSON.parse(message);
       }
-      return { error: null };
-    } catch (error) {
-      return { error };
+    } catch (e) {
+      console.error('[Utils] Failed to get auth message:', e);
     }
-  };
+    
+    return null;
+  },
 
-  return {
-    user,
-    session,
-    loading,
-    signOut,
-    isInactivityTimerActive: inactivityManager.isActive(),
-    recordActivity: auth.recordActivity
-  };
-}
+  /**
+   * Format Supabase error for display
+   */
+  formatError: (error: any): string => {
+    if (!error) return 'An unknown error occurred';
+    
+    if (typeof error === 'string') return error;
+    
+    if (error.message) return error.message;
+    
+    if (error.error_description) return error.error_description;
+    
+    return 'An unexpected error occurred';
+  }
+};
+
+// ============================================================================
+// EXPORT DEFAULT
+// ============================================================================
+
+export default supabase;

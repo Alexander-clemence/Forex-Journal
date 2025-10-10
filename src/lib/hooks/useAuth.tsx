@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase/client';
+import { supabase, inactivityManager } from '@/lib/supabase/client';
 import { Database } from '@/lib/types/database';
 
-// Add type for Profile
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type RolePermission = Database['public']['Tables']['role_permissions']['Row'];
 
@@ -37,20 +36,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
+  
+  // Use ref to prevent multiple simultaneous fetches
+  const isFetchingRef = useRef(false);
+  const permissionsCacheRef = useRef<Map<string, { permissions: string[], timestamp: number }>>(new Map());
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
-  // Derived state
   const isAdmin = role === 'admin';
   const canManageUsers = permissions.includes('users.manage');
 
-  // Helper function to check permissions
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     return permissions.includes(permission);
-  };
+  }, [permissions]);
 
-  // Load user role and permissions from database
-  const loadUserRoleAndPermissions = async (userId: string) => {
+  // Optimized: Load user role and permissions with caching and debouncing
+  const loadUserRoleAndPermissions = useCallback(async (userId: string) => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) return;
+    
+    // Check cache first
+    const cached = permissionsCacheRef.current.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      setPermissions(cached.permissions);
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    
     try {
-      // Get user role from profiles table
+      // Fetch profile with role
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -62,65 +76,87 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      // Explicitly type the profile
       const typedProfile = profile as Pick<Profile, 'role'> | null;
 
-      if (typedProfile) {
+      if (typedProfile?.role) {
         setRole(typedProfile.role);
 
-        // Only fetch permissions if role is not null
-        if (typedProfile.role) {
-          // Get permissions for this role
-          const { data: rolePermissions, error: permError } = await supabase
-            .from('role_permissions')
-            .select('permission')
-            .eq('role', typedProfile.role);
+        // Fetch permissions for this role
+        const { data: rolePermissions, error: permError } = await supabase
+          .from('role_permissions')
+          .select('permission')
+          .eq('role', typedProfile.role);
 
-          if (permError) {
-            console.error('Error fetching permissions:', permError);
-            return;
-          }
-
-          // Type the role permissions explicitly
-          const typedPermissions = rolePermissions as Pick<RolePermission, 'permission'>[] | null;
-          const userPermissions = typedPermissions?.map(p => p.permission) || [];
-          setPermissions(userPermissions);
-
-          console.log('User role loaded:', typedProfile.role);
-          console.log('User permissions:', userPermissions);
-        } else {
-          // If role is null, set empty permissions
-          setPermissions([]);
-          console.log('User has no role assigned');
+        if (permError) {
+          console.error('Error fetching permissions:', permError);
+          return;
         }
+
+        const typedPermissions = rolePermissions as Pick<RolePermission, 'permission'>[] | null;
+        const userPermissions = typedPermissions?.map(p => p.permission) || [];
+        
+        setPermissions(userPermissions);
+        
+        // Cache the results
+        permissionsCacheRef.current.set(userId, {
+          permissions: userPermissions,
+          timestamp: Date.now()
+        });
+      } else {
+        setRole(null);
+        setPermissions([]);
       }
     } catch (error) {
       console.error('Error loading user role and permissions:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error);
+    let mounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        // Use getSession for initial load (faster)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await loadUserRoleAndPermissions(session.user.id);
+            
+            // Start inactivity timer
+            inactivityManager.start(async () => {
+              await supabase.auth.signOut();
+              if (typeof window !== 'undefined') {
+                alert('You have been signed out due to 10 minutes of inactivity.');
+                window.location.href = '/login';
+              }
+            });
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) setLoading(false);
       }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await loadUserRoleAndPermissions(session.user.id);
-      }
-      
-      setLoading(false);
     };
 
-    getInitialSession();
+    initializeAuth();
 
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         console.log('Auth state changed:', event);
         
         setSession(session);
@@ -128,18 +164,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (session?.user) {
           await loadUserRoleAndPermissions(session.user.id);
+          
+          // Start/restart inactivity timer
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            inactivityManager.start(async () => {
+              await supabase.auth.signOut();
+              if (typeof window !== 'undefined') {
+                alert('You have been signed out due to 10 minutes of inactivity.');
+                window.location.href = '/login';
+              }
+            });
+          }
         } else {
           // Clear role and permissions on sign out
           setRole(null);
           setPermissions([]);
+          permissionsCacheRef.current.clear();
+          inactivityManager.stop();
         }
         
         setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+      inactivityManager.stop();
+    };
+  }, [loadUserRoleAndPermissions]);
 
   const signIn = async (email: string, password: string) => {
     setLoading(true);
@@ -189,11 +242,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = async () => {
     setLoading(true);
     try {
+      inactivityManager.stop();
+      
       const { error } = await supabase.auth.signOut();
       
-      // Clear local state
+      // Clear local state and cache
       setRole(null);
       setPermissions([]);
+      permissionsCacheRef.current.clear();
       
       if (error) throw error;
       return { error: null };
@@ -213,9 +269,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  // Method to refresh user data (useful after role changes)
   const refreshUser = async () => {
     if (user) {
+      permissionsCacheRef.current.delete(user.id); // Clear cache for refresh
       await loadUserRoleAndPermissions(user.id);
     }
   };
@@ -251,6 +307,10 @@ export function useAuth(): AuthContextType {
   return context;
 }
 
+// ============================================================================
+// PROTECTED ROUTE COMPONENTS
+// ============================================================================
+
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAdmin?: boolean;
@@ -276,7 +336,6 @@ export function ProtectedRoute({
     return null;
   }
 
-  // Check admin requirement
   if (requireAdmin && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -292,7 +351,6 @@ export function ProtectedRoute({
     );
   }
 
-  // Check specific permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -323,7 +381,6 @@ export function useRequireAuth() {
   return { user, loading, isAuthenticated: Boolean(user) };
 }
 
-// Updated admin hook
 export function useRequireAdmin() {
   const { user, loading, isAdmin, role } = useAuth();
  
@@ -331,14 +388,13 @@ export function useRequireAdmin() {
     if (!loading && !user) {
       window.location.href = '/login';
     } else if (!loading && user && !isAdmin) {
-      window.location.href = '/dashboard'; // Redirect non-admins to dashboard
+      window.location.href = '/dashboard';
     }
   }, [user, loading, isAdmin]);
 
   return { user, loading, isAdmin, role, isAuthenticated: Boolean(user) };
 }
 
-// New hook for permission-based access
 export function useRequirePermission(permission: string) {
   const { user, loading, hasPermission } = useAuth();
   

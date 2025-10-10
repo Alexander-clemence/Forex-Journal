@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -186,6 +187,7 @@ function LoginLoadingOverlay() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const { signIn, user, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -195,12 +197,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Redirect if already authenticated
+  // Optimized: Use Next.js router instead of window.location
   useEffect(() => {
     if (user && !loading) {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     }
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,10 +215,8 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
         setIsSubmitting(false);
-      } else {
-        // Keep loading state true - redirect will happen via useEffect
-        // Don't set isSubmitting to false here to keep the loading overlay
       }
+      // Success case: useEffect will handle redirect
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
@@ -288,6 +288,7 @@ export default function LoginPage() {
                     onChange={handleChange}
                     required
                     disabled={isSubmitting}
+                    autoComplete="email"
                   />
                 </div>
 
@@ -303,6 +304,7 @@ export default function LoginPage() {
                       onChange={handleChange}
                       required
                       disabled={isSubmitting}
+                      autoComplete="current-password"
                     />
                     <Button
                       type="button"
@@ -311,6 +313,7 @@ export default function LoginPage() {
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isSubmitting}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -345,15 +348,6 @@ export default function LoginPage() {
                   Forgot your password?
                 </Link>
                 
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Don't have an account?{' '}
-                  <Link
-                    href="/register"
-                    className="text-blue-600 hover:underline font-medium"
-                  >
-                    Sign up
-                  </Link>
-                </div>
               </div>
             </CardContent>
           </Card>

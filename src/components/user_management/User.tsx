@@ -83,37 +83,26 @@ export default function UserManagement() {
     try {
       setLoading(true);
       
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (profilesError) throw profilesError;
-
-      const profiles = profilesData || [];
-
-      try {
-        const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-        
-        if (authError || !authUsers) {
-          setUsers(profiles);
-        } else {
-          const usersWithEmails: ProfileWithEmail[] = profiles.map(profile => {
-            // @ts-ignore
-            const authUser: AuthUser | undefined = authUsers.find((u: AuthUser) => u.id === profile.id);
-            return {
-              // @ts-ignore - Type inference issue with returned data
-              ...profile,
-              email: authUser?.email || 'Unknown'
-            };
-          });
-          
-          setUsers(usersWithEmails);
-        }
-      } catch (authErr) {
-        console.warn('Could not fetch auth users (admin permissions required):', authErr);
-        setUsers(profiles);
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
       }
+
+      // Call API to get users with emails
+      const response = await fetch('/api/admin/list-users', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(data.data?.users || []);
     } catch (err) {
       setError('Failed to load users: ' + (err as any).message);
     } finally {
@@ -125,33 +114,33 @@ export default function UserManagement() {
     if (!editingUser) return;
     setUpdating(true);
     try {
-      const updates: ProfileUpdate = {
-        updated_at: new Date().toISOString()
-      };
-
-      if (editForm.role) {
-        updates.role = editForm.role;
-      }
-      if (editForm.displayName !== undefined) {
-        updates.display_name = editForm.displayName || null;
-      }
-      if (editForm.username !== undefined) {
-        updates.username = editForm.username || null;
-      }
-      if (editForm.timezone !== undefined) {
-        updates.timezone = editForm.timezone || null;
-      }
-      if (editForm.defaultCurrency !== undefined) {
-        updates.default_currency = editForm.defaultCurrency || null;
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        //@ts-ignore - Type inference issue with returned data
-        .update(updates)
-        .eq('id', editingUser);
+      // Call API to update user
+      const response = await fetch('/api/admin/update-user', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          userId: editingUser,
+          role: editForm.role || undefined,
+          displayName: editForm.displayName || undefined,
+          username: editForm.username || undefined,
+          timezone: editForm.timezone || undefined,
+          defaultCurrency: editForm.defaultCurrency || undefined
+        })
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update user');
+      }
 
       setSuccess('User updated successfully');
       setEditingUser(null);
@@ -172,19 +161,39 @@ export default function UserManagement() {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
 
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
+      // Get the session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-      
-      if (profileError) throw profileError;
+      console.log('Deleting user:', userId);
+      console.log('Session token exists:', !!session.access_token);
 
-      setSuccess('User deleted successfully');
+      // Call the API route to delete user (no trailing slash)
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ userId })
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      const data = await response.json().catch(() => ({ error: 'Invalid response from server' }));
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to delete user (${response.status})`);
+      }
+
+      setSuccess(data.message || 'User deleted successfully');
       await loadUsers();
     } catch (err) {
+      console.error('Delete error:', err);
       setError('Failed to delete user: ' + (err as any).message);
     }
   };
@@ -207,44 +216,49 @@ export default function UserManagement() {
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: signupForm.email,
-        password: signupForm.password,
-        user_metadata: {
-          display_name: signupForm.displayName || signupForm.email.split('@')[0],
-          role: signupForm.role
-        }
+      // Get the session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      console.log('Creating user:', signupForm.email, 'with role:', signupForm.role);
+      console.log('Session token exists:', !!session.access_token);
+
+      // Call the API route to create user (no trailing slash)
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          email: signupForm.email,
+          password: signupForm.password,
+          displayName: signupForm.displayName,
+          role: signupForm.role // This now sends the selected role from the form
+        })
       });
 
-      if (error) throw error;
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
 
-      if (data.user) {
-        const profileInsert: ProfileInsert = {
-          id: data.user.id,
-          role: signupForm.role,
-          display_name: signupForm.displayName || signupForm.email.split('@')[0]
-        };
-        
-        if (signupForm.displayName) {
-          profileInsert.username = signupForm.displayName.toLowerCase().replace(/\s+/g, '_');
-        }
+      const data = await response.json().catch(() => ({ error: 'Invalid response from server' }));
+      console.log('Response data:', data);
 
-        const { error: profileError } = await supabase
-          .from('profiles')
-          //@ts-ignore - Type inference issue with returned data
-          .insert(profileInsert);
-
-        if (profileError) throw profileError;
-
-        setSuccess(`User ${signupForm.email} created successfully!`);
-        setShowSignupModal(false);
-        setSignupForm({ email: '', password: '', displayName: '', role: 'user' });
-        
-        setTimeout(() => {
-          loadUsers();
-        }, 1000);
+      if (!response.ok) {
+        throw new Error(data.error || `Failed to create user (${response.status})`);
       }
+
+      setSuccess(`User ${signupForm.email} created successfully!`);
+      setShowSignupModal(false);
+      setSignupForm({ email: '', password: '', displayName: '', role: 'user' });
+      
+      setTimeout(() => {
+        loadUsers();
+      }, 1000);
     } catch (err) {
+      console.error('Create user error:', err);
       setError('Failed to create user: ' + (err as any).message);
     } finally {
       setIsSubmitting(false);

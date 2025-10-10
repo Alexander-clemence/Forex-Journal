@@ -7,27 +7,273 @@ import { PnLChart } from '@/components/analytics/PnLChart';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { StatsCards } from '@/components/dashboard/StatsCard';
 import { RecentTradesCard } from '@/components/dashboard/RecentTradesard';
+import { MarketStatus } from '@/components/dashboard/MarketStatus';
 import { useTrades } from '@/lib/hooks/useTrades';
 import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
 import { TrendingUp, TrendingDown, Plus, BarChart3, Wallet } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { Toaster } from '@/components/ui/sonner';
-import { MarketStatus } from '@/components/dashboard/MarketStatus';
+import { useState, useMemo, useCallback, memo } from 'react';
+import { toast } from 'sonner';
+
+// ============================================================================
+// MEMOIZED COMPONENTS - Prevent unnecessary re-renders
+// ============================================================================
+
+const BalanceDisplay = memo(({ 
+  currentBalance, 
+  balanceLoading 
+}: { 
+  currentBalance: number; 
+  balanceLoading: boolean;
+}) => (
+  <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-md border">
+    <Wallet className="h-4 w-4 text-gray-500" />
+    <span className="text-sm text-gray-600 dark:text-gray-400">Balance:</span>
+    <span className="font-medium text-gray-900 dark:text-white">
+      {balanceLoading ? '...' : `$${currentBalance.toLocaleString(undefined, { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+      })}`}
+    </span>
+  </div>
+));
+BalanceDisplay.displayName = 'BalanceDisplay';
+
+const TodaySummaryCard = memo(({ 
+  stats, 
+  currentBalance 
+}: { 
+  stats: any; 
+  currentBalance: number;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="text-lg">Today's Summary</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Total P&L</span>
+        <div className="flex items-center">
+          {stats.totalPnL >= 0 ? (
+            <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+          ) : (
+            <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
+          )}
+          <span className={`font-semibold ${
+            stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            ${stats.totalPnL.toFixed(2)}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Account Impact</span>
+        <span className={`text-sm font-medium ${
+          stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {currentBalance > 0 ? ((stats.totalPnL / currentBalance) * 100).toFixed(2) : '0.00'}%
+        </span>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Open Trades</span>
+        <span className="font-semibold">{stats.openTrades}</span>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Win Rate</span>
+        <span className={`font-semibold ${
+          stats.winRate >= 60 ? 'text-green-600' : 
+          stats.winRate >= 50 ? 'text-yellow-600' : 'text-red-600'
+        }`}>
+          {stats.winRate.toFixed(1)}%
+        </span>
+      </div>
+
+      <div className="pt-2 border-t">
+        <Link href="/dashboard/trades">
+          <Button variant="outline" className="w-full">
+            View All Trades
+          </Button>
+        </Link>
+      </div>
+    </CardContent>
+  </Card>
+));
+TodaySummaryCard.displayName = 'TodaySummaryCard';
+
+const AccountCard = memo(({ 
+  currentBalance, 
+  baseBalance, 
+  tradePnL 
+}: { 
+  currentBalance: number; 
+  baseBalance: number; 
+  tradePnL: number;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="text-lg flex items-center gap-2">
+        <Wallet className="h-4 w-4" />
+        Account
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Current Balance</span>
+        <span className="font-semibold">
+          ${currentBalance.toLocaleString(undefined, { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+          })}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Base Balance</span>
+        <span className="font-medium text-gray-700 dark:text-gray-300">
+          ${baseBalance.toLocaleString(undefined, { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+          })}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600 dark:text-gray-400">Trade P&L</span>
+        <span className={`font-semibold ${
+          tradePnL >= 0 ? 'text-green-600' : 'text-red-600'
+        }`}>
+          {tradePnL >= 0 ? '+' : ''}${tradePnL.toFixed(2)}
+        </span>
+      </div>
+
+      <div className="pt-2 border-t">
+        <Link href="/dashboard/balance">
+          <Button variant="outline" size="sm" className="w-full">
+            <Wallet className="h-3 w-3 mr-1" />
+            Manage Balance
+          </Button>
+        </Link>
+      </div>
+    </CardContent>
+  </Card>
+));
+AccountCard.displayName = 'AccountCard';
+
+// ============================================================================
+// BALANCE EDIT COMPONENT
+// ============================================================================
+
+const BalanceEditCard = memo(({ 
+  newBalance,
+  setNewBalance,
+  handleUpdateBalance,
+  setShowBalanceEdit,
+  hasBalance,
+  tradePnL,
+  balanceUpdating
+}: {
+  newBalance: string;
+  setNewBalance: (value: string) => void;
+  handleUpdateBalance: () => void;
+  setShowBalanceEdit: (value: boolean) => void;
+  hasBalance: boolean;
+  tradePnL: number;
+  balanceUpdating: boolean;
+}) => {
+  const parsedBalance = useMemo(() => parseFloat(newBalance), [newBalance]);
+  const isValidBalance = useMemo(() => 
+    !isNaN(parsedBalance) && parsedBalance >= 0, 
+    [parsedBalance]
+  );
+
+  return (
+    <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200">
+      <CardContent className="py-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium text-blue-900 dark:text-blue-100">
+            {hasBalance ? 'Update Base Balance' : 'Set Base Balance'}
+          </h3>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={newBalance}
+                onChange={(e) => setNewBalance(e.target.value)}
+                placeholder="Enter base balance"
+                className="bg-white dark:bg-gray-800"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={handleUpdateBalance}
+                disabled={!isValidBalance || balanceUpdating}
+                size="sm"
+              >
+                {balanceUpdating ? 'Updating...' : hasBalance ? 'Update' : 'Set'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBalanceEdit(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+          
+          {isValidBalance && (
+            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <p>Base balance: <strong>${parsedBalance.toFixed(2)}</strong></p>
+              <p>Trade P&L: <strong>${tradePnL.toFixed(2)}</strong></p>
+              <p className="font-semibold">
+                Total balance: <strong>${(parsedBalance + tradePnL).toFixed(2)}</strong>
+              </p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+BalanceEditCard.displayName = 'BalanceEditCard';
+
+// ============================================================================
+// MAIN DASHBOARD COMPONENT
+// ============================================================================
 
 export default function DashboardPage() {
   const { trades, loading, stats } = useTrades();
-  const { currentBalance, baseBalance, tradePnL, hasBalance, setBalance, loading: balanceLoading } = useSimpleBalance();
+  const { 
+    currentBalance, 
+    baseBalance, 
+    tradePnL, 
+    hasBalance, 
+    setBalance, 
+    loading: balanceLoading 
+  } = useSimpleBalance();
+  
   const [showBalanceEdit, setShowBalanceEdit] = useState(false);
   const [newBalance, setNewBalance] = useState('');
   const [balanceUpdating, setBalanceUpdating] = useState(false);
 
-  const handleUpdateBalance = async () => {
+  // Memoize recent trades to prevent recalculation on every render
+  const recentTrades = useMemo(() => trades.slice(0, 5), [trades]);
+
+  // Memoize callback functions to maintain reference stability
+  const handleUpdateBalance = useCallback(async () => {
     const amount = parseFloat(newBalance);
     
     if (isNaN(amount) || amount < 0) {
-      //@ts-ignore
-      Toaster.error('Invalid Amount', {
+      toast.error('Invalid Amount', {
         description: 'Please enter a valid amount (0 or greater)',
       });
       return;
@@ -38,24 +284,22 @@ export default function DashboardPage() {
       await setBalance(amount);
       setShowBalanceEdit(false);
       setNewBalance('');
-      //@ts-ignore
-      Toaster.success('Balance Updated', {
+      toast.success('Balance Updated', {
         description: `Base balance updated to $${amount.toFixed(2)}`,
       });
     } catch (error) {
-      //@ts-ignore
-      Toaster.error('Update Failed', {
+      toast.error('Update Failed', {
         description: error instanceof Error ? error.message : 'Something went wrong',
       });
     } finally {
       setBalanceUpdating(false);
     }
-  };
+  }, [newBalance, setBalance]);
 
-  const startBalanceEdit = () => {
+  const startBalanceEdit = useCallback(() => {
     setNewBalance(hasBalance ? baseBalance.toString() : '');
     setShowBalanceEdit(true);
-  };
+  }, [hasBalance, baseBalance]);
   
   if (loading) {
     return (
@@ -64,8 +308,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const recentTrades = trades.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -81,16 +323,10 @@ export default function DashboardPage() {
         </div>
         
         <div className="flex items-center space-x-3">
-          {/* Subtle Balance Display */}
-          <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-md border">
-            <Wallet className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Balance:
-            </span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {balanceLoading ? '...' : `$${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            </span>
-          </div>
+          <BalanceDisplay 
+            currentBalance={currentBalance}
+            balanceLoading={balanceLoading}
+          />
 
           <Button 
             variant="outline"
@@ -116,58 +352,15 @@ export default function DashboardPage() {
 
       {/* Balance Edit Form */}
       {showBalanceEdit && (
-        <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200">
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                {hasBalance ? 'Update Base Balance' : 'Set Base Balance'}
-              </h3>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={newBalance}
-                    onChange={(e) => setNewBalance(e.target.value)}
-                    placeholder="Enter base balance"
-                    className="bg-white dark:bg-gray-800"
-                  />
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleUpdateBalance}
-                    disabled={!newBalance || parseFloat(newBalance) < 0 || balanceUpdating}
-                    size="sm"
-                  >
-                    {balanceUpdating ? 'Updating...' : hasBalance ? 'Update' : 'Set'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowBalanceEdit(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-              
-              {newBalance && parseFloat(newBalance) >= 0 && (
-                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                  <p>Base balance: <strong>${parseFloat(newBalance).toFixed(2)}</strong></p>
-                  <p>Trade P&L: <strong>${tradePnL.toFixed(2)}</strong></p>
-                  <p className="font-semibold">
-                    Total balance: <strong>${(parseFloat(newBalance) + tradePnL).toFixed(2)}</strong>
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <BalanceEditCard
+          newBalance={newBalance}
+          setNewBalance={setNewBalance}
+          handleUpdateBalance={handleUpdateBalance}
+          setShowBalanceEdit={setShowBalanceEdit}
+          hasBalance={hasBalance}
+          tradePnL={tradePnL}
+          balanceUpdating={balanceUpdating}
+        />
       )}
 
       {/* Stats Cards */}
@@ -177,7 +370,6 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* P&L Chart */}
         <div className="lg:col-span-2">
-            
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -191,137 +383,32 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <PnLChart trades={trades} />
-              
-   
             </CardContent>
           </Card>
-        <div className="pt-8 border-t space-y-2">
-                <RecentTradesCard trades={recentTrades} />
+          
+          <div className="pt-8 border-t space-y-2">
+            <RecentTradesCard trades={recentTrades} />
           </div>
-         
         </div>
 
         {/* Right Sidebar */}
         <div className="space-y-6">
           <QuickActions />
+          
+          <TodaySummaryCard 
+            stats={stats}
+            currentBalance={currentBalance}
+          />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Today's Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Total P&L
-                </span>
-                <div className="flex items-center">
-                  {stats.totalPnL >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
-                  )}
-                  <span className={`font-semibold ${
-                    stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    ${stats.totalPnL.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Account Impact
-                </span>
-                <span className={`text-sm font-medium ${
-                  stats.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {currentBalance > 0 ? ((stats.totalPnL / currentBalance) * 100).toFixed(2) : '0.00'}%
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Open Trades
-                </span>
-                <span className="font-semibold">{stats.openTrades}</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Win Rate
-                </span>
-                <span className={`font-semibold ${
-                  stats.winRate >= 60 ? 'text-green-600' : 
-                  stats.winRate >= 50 ? 'text-yellow-600' : 'text-red-600'
-                }`}>
-                  {stats.winRate.toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="pt-2 border-t">
-                <Link href="/dashboard/trades">
-                  <Button variant="outline" className="w-full">
-                    View All Trades
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                Account
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Current Balance
-                </span>
-                <span className="font-semibold">
-                  ${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Base Balance
-                </span>
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  ${baseBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Trade P&L
-                </span>
-                <span className={`font-semibold ${
-                  tradePnL >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {tradePnL >= 0 ? '+' : ''}${tradePnL.toFixed(2)}
-                </span>
-              </div>
-
-              <div className="pt-2 border-t">
-                <Link href="/dashboard/balance">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Wallet className="h-3 w-3 mr-1" />
-                    Manage Balance
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-    
+          <AccountCard
+            currentBalance={currentBalance}
+            baseBalance={baseBalance}
+            tradePnL={tradePnL}
+          />
             
-                <MarketStatus />
+          <MarketStatus />
         </div>
       </div>
-
     </div>
   );
 }
