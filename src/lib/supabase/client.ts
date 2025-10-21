@@ -42,9 +42,15 @@ interface InactivityConfig {
 // INACTIVITY MANAGER - ENHANCED WITH WARNING SYSTEM
 // ============================================================================
 
-const DEFAULT_INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+// Use shorter timeout in development for testing
+const DEFAULT_INACTIVITY_TIMEOUT = process.env.NODE_ENV === 'development' 
+  ? 2 * 60 * 1000  // 2 minutes in development
+  : 10 * 60 * 1000; // 10 minutes in production
+
 const DEFAULT_ACTIVITY_THROTTLE = 2000; // 2 seconds
-const DEFAULT_WARNING_TIME = 60; // 1 minute before timeout
+const DEFAULT_WARNING_TIME = process.env.NODE_ENV === 'development'
+  ? 30  // 30 seconds before timeout in development
+  : 60; // 1 minute before timeout in production
 
 class InactivityManager {
   private timer: ReturnType<typeof setTimeout> | null = null;
@@ -169,6 +175,32 @@ class InactivityManager {
   getLastActivityTime() {
     return this.lastActivityTime;
   }
+
+  // Debug methods for testing
+  getTimeRemaining() {
+    if (!this.timer) return 0;
+    const now = Date.now();
+    const timeSinceLastActivity = now - this.lastActivityTime;
+    const remaining = this.config.timeout - timeSinceLastActivity;
+    return Math.max(0, remaining);
+  }
+
+  getStatus() {
+    return {
+      isActive: this.isActive(),
+      timeRemaining: this.getTimeRemaining(),
+      lastActivityTime: this.lastActivityTime,
+      config: this.config
+    };
+  }
+
+  // Test method to simulate timeout (for development/testing)
+  testTimeout() {
+    if (this.timeoutCallback) {
+      console.log('[Inactivity] Test timeout triggered');
+      this.timeoutCallback();
+    }
+  }
 }
 
 export const inactivityManager = new InactivityManager();
@@ -275,22 +307,27 @@ export const auth = {
     console.log('[Auth] Signing out due to inactivity');
     inactivityManager.stop();
     
-    await supabase.auth.signOut();
-    cleanupSupabaseStorage();
-    
-    if (typeof window !== 'undefined') {
-      // Use a more modern notification approach
-      // You should replace this with a toast/modal in your app
-      const message = 'You have been signed out due to inactivity.';
+    try {
+      await supabase.auth.signOut();
+      cleanupSupabaseStorage();
       
-      // Store message for display on login page
-      sessionStorage.setItem('auth_message', JSON.stringify({
-        type: 'info',
-        message,
-        timestamp: Date.now()
-      }));
-      
-      window.location.href = '/login';
+      if (typeof window !== 'undefined') {
+        // Store message for display on login page
+        sessionStorage.setItem('auth_message', JSON.stringify({
+          type: 'warning',
+          message: 'You have been signed out due to 10 minutes of inactivity.',
+          timestamp: Date.now()
+        }));
+        
+        // Redirect to login page
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('[Auth] Error during inactivity sign out:', error);
+      // Force redirect even if sign out fails
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
     }
   },
 
@@ -344,15 +381,8 @@ export const auth = {
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
     const { data: subscription } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Start/stop inactivity manager based on auth state
-        if (event === 'SIGNED_IN' && session) {
-          inactivityManager.start(() => {
-            auth.signOutDueToInactivity();
-          });
-        } else if (event === 'SIGNED_OUT') {
-          inactivityManager.stop();
-        }
-        
+        // Note: Inactivity timer is managed in useAuth hook
+        // This prevents duplicate timer starts
         callback(event, session);
       }
     );

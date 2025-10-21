@@ -2,7 +2,7 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, inactivityManager } from '@/lib/supabase/client';
+import { supabase, inactivityManager, auth } from '@/lib/supabase/client';
 import { Database } from '@/lib/types/database';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -116,6 +116,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
     
+    // Add timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('Auth initialization timeout - setting loading to false');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+    
     const initializeAuth = async () => {
       try {
         // Use getSession for initial load (faster)
@@ -129,24 +137,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setSession(session);
           setUser(session?.user ?? null);
           
+          // Set loading to false immediately for faster UI response
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          
+          // Load role and permissions in background (non-blocking)
           if (session?.user) {
-            await loadUserRoleAndPermissions(session.user.id);
+            // Start inactivity timer immediately
+            console.log('[Auth] Initializing inactivity timer for user:', session.user.email);
+            inactivityManager.start(() => {
+              auth.signOutDueToInactivity();
+            });
             
-            // Start inactivity timer
-            inactivityManager.start(async () => {
-              await supabase.auth.signOut();
-              if (typeof window !== 'undefined') {
-                alert('You have been signed out due to 10 minutes of inactivity.');
-                window.location.href = '/login';
-              }
+            // Load permissions in background without blocking UI
+            loadUserRoleAndPermissions(session.user.id).catch(error => {
+              console.error('Error loading user permissions:', error);
             });
           }
-          
-          setLoading(false);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+        }
       }
     };
 
@@ -162,19 +176,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Set loading to false immediately for responsive UI
+        setLoading(false);
+        
         if (session?.user) {
-          await loadUserRoleAndPermissions(session.user.id);
-          
-          // Start/restart inactivity timer
+          // Start/restart inactivity timer immediately
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            inactivityManager.start(async () => {
-              await supabase.auth.signOut();
-              if (typeof window !== 'undefined') {
-                alert('You have been signed out due to 10 minutes of inactivity.');
-                window.location.href = '/login';
-              }
+            console.log('[Auth] Starting inactivity timer for user:', session.user.email);
+            inactivityManager.start(() => {
+              auth.signOutDueToInactivity();
             });
           }
+          
+          // Load permissions in background (non-blocking)
+          loadUserRoleAndPermissions(session.user.id).catch(error => {
+            console.error('Error loading user permissions:', error);
+          });
         } else {
           // Clear role and permissions on sign out
           setRole(null);
@@ -182,13 +199,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           permissionsCacheRef.current.clear();
           inactivityManager.stop();
         }
-        
-        setLoading(false);
       }
     );
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
       inactivityManager.stop();
     };

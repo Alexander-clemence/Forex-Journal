@@ -133,12 +133,12 @@ export default function ModernLandingPage() {
               
               <div className="bg-white/5 p-6 rounded-xl border border-white/10 h-64">
                 <div className="h-full flex items-end justify-around gap-2">
-                  {[...Array(12)].map((_, i) => (
+                  {[65, 45, 80, 30, 70, 55, 90, 25, 60, 75, 40, 85].map((height, i) => (
                     <div
                       key={i}
                       className="bg-gradient-to-t from-blue-500/50 to-purple-500/50 rounded-t animate-pulse w-full"
                       style={{
-                        height: `${Math.random() * 80 + 20}%`,
+                        height: `${height}%`,
                         animationDelay: `${i * 0.1}s`
                       }}
                     />
