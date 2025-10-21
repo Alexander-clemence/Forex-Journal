@@ -14,8 +14,7 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-      // @ts-ignore
-      .insert([calculatedTrade])
+      .insert([calculatedTrade] as any)
       .select()
       .single();
 
@@ -34,14 +33,17 @@ export class TradeService {
       throw new Error('Trade not found');
     }
 
+    // Type assertion to ensure TypeScript knows the type
+    const existingTrade = existing as Trade;
+
     const updatedTrade = {
       ...trade,
     };
 
     // Recalculate risk/reward ratio if relevant fields changed
-    if (trade.stop_loss && trade.take_profit && (trade.entry_price || existing.entry_price)) {
+    if (trade.stop_loss && trade.take_profit && (trade.entry_price || existingTrade.entry_price)) {
       updatedTrade.risk_reward_ratio = this.calculateRiskRewardRatio(
-        trade.entry_price || existing.entry_price,
+        trade.entry_price || existingTrade.entry_price,
         trade.stop_loss,
         trade.take_profit
       );
@@ -49,6 +51,7 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
+      // @ts-ignore
       .update(updatedTrade)
       .eq('id', id)
       .select()
