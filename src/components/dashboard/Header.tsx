@@ -82,8 +82,9 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
   }, [user?.user_metadata?.display_name, user?.email]);
 
   // Memoize sign out handler
-  const handleSignOut = useCallback(() => {
-    signOut();
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    window.location.href = '/';
   }, [signOut]);
 
   // Memoize mobile menu toggle handler

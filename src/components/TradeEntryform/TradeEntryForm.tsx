@@ -255,19 +255,23 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="profit_loss">Profit/Loss ($) *</Label>
-                        <Input 
-                          id="profit_loss" 
-                          type="number" 
-                          step="0.01" 
-                          value={formData.profit_loss !== undefined ? formData.profit_loss : ''} 
-                          //@ts-ignore
-                          onChange={(e) => handleInputChange('profit_loss', e.target.value ? parseFloat(e.target.value) : undefined)} 
-                          placeholder="100.00 or -50.00" 
-                        />
-                        <p className="text-xs text-gray-500">Enter actual P&L from broker</p>
-                      </div>
+        <div className="space-y-2">
+          <Label htmlFor="profit_loss">Profit/Loss ($) *</Label>
+          <Input
+            id="profit_loss"
+            type="number"
+            step="0.01"
+            value={formData.profit_loss !== undefined ? formData.profit_loss : ''}
+            //@ts-ignore
+            onChange={(e) => handleInputChange('profit_loss', e.target.value ? parseFloat(e.target.value) : undefined)}
+            placeholder="100.00 or -50.00"
+          />
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>💡</span>
+            <span>Enter actual P&L from broker</span>
+            <span className="text-amber-600 font-medium">• Remember: losses should be negative (-50.00)</span>
+          </div>
+        </div>
                     </>
                   )}
                 </div>

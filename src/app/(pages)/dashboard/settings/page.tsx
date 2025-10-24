@@ -735,7 +735,10 @@ export default function SettingsPage() {
                       Sign out of your account on this device
                     </p>
                   </div>
-                  <Button variant="destructive" onClick={signOut}>
+                  <Button variant="destructive" onClick={async () => {
+                    await signOut();
+                    window.location.href = '/';
+                  }}>
                     Sign Out
                   </Button>
                 </div>
