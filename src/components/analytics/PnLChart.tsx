@@ -185,15 +185,29 @@ export function PnLChart({ trades, timeframe = 'All Time' }: PnLChartProps) {
         </div>
         <div className="text-center">
           <p className="text-lg font-semibold text-green-600">
-            {data.length > 0 ? formatCurrency(Math.max(...data.map(d => d.daily_pnl))) : '$0'}
+            {(() => {
+              const closedTrades = trades.filter(trade => trade.status === 'closed' && trade.profit_loss !== null);
+              const winningTrades = closedTrades.filter(trade => (trade.profit_loss || 0) > 0);
+              const bestTrade = winningTrades.length > 0 
+                ? Math.max(...winningTrades.map(trade => trade.profit_loss || 0))
+                : 0;
+              return formatCurrency(bestTrade);
+            })()}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Best Day</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Best Trade</p>
         </div>
         <div className="text-center">
           <p className="text-lg font-semibold text-red-600">
-            {data.length > 0 ? formatCurrency(Math.min(...data.map(d => d.daily_pnl))) : '$0'}
+            {(() => {
+              const closedTrades = trades.filter(trade => trade.status === 'closed' && trade.profit_loss !== null);
+              const losingTrades = closedTrades.filter(trade => (trade.profit_loss || 0) < 0);
+              const worstTrade = losingTrades.length > 0
+                ? Math.min(...losingTrades.map(trade => trade.profit_loss || 0))
+                : 0;
+              return formatCurrency(Math.abs(worstTrade));
+            })()}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Worst Day</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Worst Trade</p>
         </div>
       </div>
     </div>
