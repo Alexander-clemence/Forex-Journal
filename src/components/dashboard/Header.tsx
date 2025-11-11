@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
 import {
   User,
   Settings,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '../theme/ThemeToggle';
+import { useUIStore } from '@/lib/stores/uiStore';
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
@@ -70,6 +70,7 @@ UserInfo.displayName = 'UserInfo';
 
 export default function Header({ onMobileMenuToggle }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const toggleMobileMenu = useUIStore((state) => state.toggleMobileMenu);
 
   // Memoize user data to prevent unnecessary re-renders
   const userData = useMemo(() => {
@@ -89,17 +90,16 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
 
   // Memoize mobile menu toggle handler
   const handleMobileMenuToggle = useCallback(() => {
+    toggleMobileMenu();
     onMobileMenuToggle?.();
-  }, [onMobileMenuToggle]);
+  }, [toggleMobileMenu, onMobileMenuToggle]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Left side - Logo and mobile menu */}
         <div className="flex items-center space-x-4">
-          {onMobileMenuToggle && (
-            <MobileMenuButton onClick={handleMobileMenuToggle} />
-          )}
+          <MobileMenuButton onClick={handleMobileMenuToggle} />
 
         </div>
 

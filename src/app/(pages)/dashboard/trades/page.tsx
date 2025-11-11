@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import { TradeFilters as TradeFilterType } from '@/lib/types/trades';
 import { Trade } from '@/lib/types/trades';
 import { TradeFilters } from '@/components/trades/TradeFilters';
 import { TradeCard } from '@/components/trades/TradeCard';
+import { useTradeListStore } from '@/lib/stores/tradeListStore';
+import { useShallow } from 'zustand/react/shallow';
 
 // Memoized loading skeleton
 const TradeCardSkeleton = memo(() => (
@@ -55,15 +57,43 @@ const DEBOUNCE_DELAY = 300;
 export default function TradesPage() {
   const router = useRouter();
   const { trades, loading, stats } = useTrades();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<TradeFilterType>({});
-  const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'symbol'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [displayedTrades, setDisplayedTrades] = useState(ITEMS_PER_PAGE);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
+  const {
+    searchTerm,
+    debouncedSearch,
+    showFilters,
+    filters,
+    sortBy,
+    sortOrder,
+    displayedTrades,
+    isLoadingMore,
+    setSearchTerm,
+    setDebouncedSearch,
+    toggleFilters,
+    setFilters: updateFilters,
+    setSort,
+    increaseDisplayedTrades,
+    setIsLoadingMore,
+    resetDisplayedTrades,
+  } = useTradeListStore(useShallow((state) => ({
+    searchTerm: state.searchTerm,
+    debouncedSearch: state.debouncedSearch,
+    showFilters: state.showFilters,
+    filters: state.filters,
+    sortBy: state.sortBy,
+    sortOrder: state.sortOrder,
+    displayedTrades: state.displayedTrades,
+    isLoadingMore: state.isLoadingMore,
+    setSearchTerm: state.setSearchTerm,
+    setDebouncedSearch: state.setDebouncedSearch,
+    toggleFilters: state.toggleFilters,
+    setFilters: state.setFilters,
+    setSort: state.setSort,
+    increaseDisplayedTrades: state.increaseDisplayedTrades,
+    setIsLoadingMore: state.setIsLoadingMore,
+    resetDisplayedTrades: state.resetDisplayedTrades,
+  })));
+
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   //@ts-ignore
@@ -146,13 +176,12 @@ export default function TradesPage() {
 
   const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const [field, order] = e.target.value.split('-');
-    setSortBy(field as 'date' | 'pnl' | 'symbol');
-    setSortOrder(order as 'asc' | 'desc');
-  }, []);
+    setSort(field as 'date' | 'pnl' | 'symbol', order as 'asc' | 'desc');
+  }, [setSort]);
 
-  const toggleFilters = useCallback(() => {
-    setShowFilters(prev => !prev);
-  }, []);
+  const handleToggleFilters = useCallback(() => {
+    toggleFilters();
+  }, [toggleFilters]);
 
   const loadMore = useCallback(() => {
     if (hasMore && !isLoadingMore) {
@@ -160,12 +189,12 @@ export default function TradesPage() {
       // Use requestAnimationFrame for smoother updates
       requestAnimationFrame(() => {
         setTimeout(() => {
-          setDisplayedTrades(prev => Math.min(prev + ITEMS_PER_PAGE, filteredTrades.length));
+          increaseDisplayedTrades(filteredTrades.length);
           setIsLoadingMore(false);
         }, 100);
       });
     }
-  }, [hasMore, isLoadingMore, filteredTrades.length]);
+  }, [hasMore, isLoadingMore, filteredTrades.length, increaseDisplayedTrades, setIsLoadingMore]);
 
   // Setup intersection observer for infinite scroll
   useEffect(() => {
@@ -191,8 +220,8 @@ export default function TradesPage() {
 
   // Reset displayed trades when filters change
   useEffect(() => {
-    setDisplayedTrades(ITEMS_PER_PAGE);
-  }, [debouncedSearch, filters, sortBy, sortOrder]);
+    resetDisplayedTrades();
+  }, [debouncedSearch, filters, sortBy, sortOrder, resetDisplayedTrades]);
 
   // Memoized stats
   const statsDisplay = useMemo(() => ({
@@ -270,7 +299,7 @@ export default function TradesPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={toggleFilters}
+                onClick={handleToggleFilters}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 Filters
@@ -293,7 +322,7 @@ export default function TradesPage() {
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t">
-              <TradeFilters filters={filters} onFiltersChange={setFilters} />
+              <TradeFilters filters={filters} onFiltersChange={updateFilters} />
             </div>
           )}
         </CardContent>

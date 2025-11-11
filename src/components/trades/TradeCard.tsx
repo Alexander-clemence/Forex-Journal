@@ -29,6 +29,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { TradeService } from '@/lib/services/tradeService';
 import { toast } from 'sonner';
+import { useTradeModalStore } from '@/lib/stores/tradeModalStore';
+import { useShallow } from 'zustand/react/shallow';
 
 interface TradeCardProps {
   trade: Trade;
@@ -69,12 +71,35 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
 });
 
 export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentTrade, setCurrentTrade] = useState<Trade>(trade);
+
+  const {
+    viewTradeId,
+    editTradeId,
+    deleteTradeId,
+    openView,
+    openEdit,
+    openDelete,
+    closeView,
+    closeEdit,
+    closeDelete,
+  } = useTradeModalStore(useShallow((state) => ({
+    viewTradeId: state.viewTradeId,
+    editTradeId: state.editTradeId,
+    deleteTradeId: state.deleteTradeId,
+    openView: state.openView,
+    openEdit: state.openEdit,
+    openDelete: state.openDelete,
+    closeView: state.closeView,
+    closeEdit: state.closeEdit,
+    closeDelete: state.closeDelete,
+  })));
+
+  const isViewOpen = currentTrade.id ? viewTradeId === currentTrade.id : false;
+  const isEditOpen = currentTrade.id ? editTradeId === currentTrade.id : false;
+  const isDeleteOpen = currentTrade.id ? deleteTradeId === currentTrade.id : false;
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -168,15 +193,16 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
       toast.success('Trade Deleted', {
         description: 'The trade has been permanently deleted.'
       });
+      closeDelete();
       window.location.reload();
     } catch (error) {
       toast.error('Error', {
         description: 'Failed to delete trade. Please try again.'
       });
       setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
+      closeDelete();
     }
-  }, [currentTrade.id]);
+  }, [currentTrade.id, closeDelete]);
 
   const handleTradeUpdated = useCallback((updatedTrade: Trade) => {
     setCurrentTrade(updatedTrade);
@@ -199,7 +225,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => currentTrade.id && openView(currentTrade.id)}
               className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800"
               title="View Details"
             >
@@ -208,7 +234,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={() => currentTrade.id && openEdit(currentTrade.id)}
               className="h-8 w-8 hover:bg-slate-100 dark:hover:bg-slate-800"
               title="Edit Trade"
             >
@@ -217,7 +243,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => setIsDeleteDialogOpen(true)}
+              onClick={() => currentTrade.id && openDelete(currentTrade.id)}
               className="h-8 w-8 hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400"
               title="Delete Trade"
             >
@@ -333,20 +359,26 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
 
       <TradeDetailsModal
         trade={currentTrade}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isViewOpen}
+        onClose={closeView}
         onTradeUpdated={handleTradeUpdated}
         onTradeDeleted={onTradeDeleted}
       />
 
       <EditTradeModal
         trade={currentTrade}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        isOpen={isEditOpen}
+        onClose={closeEdit}
         onTradeUpdated={handleTradeUpdated}
       />
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={isDeleteOpen} onOpenChange={(open) => {
+        if (open) {
+          currentTrade.id && openDelete(currentTrade.id);
+        } else {
+          closeDelete();
+        }
+      }}>
         <AlertDialogContent className="bg-slate-900 border-slate-800">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">Delete Trade</AlertDialogTitle>
@@ -356,7 +388,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-800 text-slate-200 hover:bg-slate-700 border-slate-700">
+            <AlertDialogCancel className="bg-slate-800 text-slate-200 hover:bg-slate-700 border-slate-700" onClick={closeDelete}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

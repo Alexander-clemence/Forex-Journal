@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { supabase, inactivityManager, auth } from '@/lib/supabase/client';
 import { Database } from '@/lib/types/database';
+import { useAuthStore } from '@/lib/stores/authStore';
+import type { User, Session } from '@supabase/supabase-js';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type RolePermission = Database['public']['Tables']['role_permissions']['Row'];
@@ -31,23 +32,31 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<string | null>(null);
-  const [permissions, setPermissions] = useState<string[]>([]);
+  const user = useAuthStore(state => state.user);
+  const session = useAuthStore(state => state.session);
+  const loading = useAuthStore(state => state.loading);
+  const role = useAuthStore(state => state.role);
+  const permissions = useAuthStore(state => state.permissions);
+
+  const setUser = useAuthStore(state => state.setUser);
+  const setSession = useAuthStore(state => state.setSession);
+  const setLoading = useAuthStore(state => state.setLoading);
+  const setRole = useAuthStore(state => state.setRole);
+  const setPermissions = useAuthStore(state => state.setPermissions);
+  const clearAuth = useAuthStore(state => state.clearAuth);
+
+  const hasPermissionFromStore = useAuthStore(state => state.hasPermission);
+  const isAdmin = useAuthStore(state => state.isAdmin());
+  const canManageUsers = useAuthStore(state => state.canManageUsers());
   
   // Use ref to prevent multiple simultaneous fetches
   const isFetchingRef = useRef(false);
   const permissionsCacheRef = useRef<Map<string, { permissions: string[], timestamp: number }>>(new Map());
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
-  const isAdmin = role === 'admin';
-  const canManageUsers = permissions.includes('users.manage');
-
   const hasPermission = useCallback((permission: string): boolean => {
-    return permissions.includes(permission);
-  }, [permissions]);
+    return hasPermissionFromStore(permission);
+  }, [hasPermissionFromStore]);
 
   // Optimized: Load user role and permissions with caching and debouncing
   const loadUserRoleAndPermissions = useCallback(async (userId: string) => {
@@ -194,6 +203,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           });
         } else {
           // Clear role and permissions on sign out
+          clearAuth();
           setRole(null);
           setPermissions([]);
           permissionsCacheRef.current.clear();
@@ -259,14 +269,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLoading(true);
     try {
       inactivityManager.stop();
-      
       const { error } = await supabase.auth.signOut();
-      
-      // Clear local state and cache
-      setRole(null);
-      setPermissions([]);
+      clearAuth();
       permissionsCacheRef.current.clear();
-      
       if (error) throw error;
       return { error: null };
     } catch (error) {

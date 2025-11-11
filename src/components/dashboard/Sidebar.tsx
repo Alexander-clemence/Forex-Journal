@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useMemo, useCallback, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -23,6 +23,7 @@ import {
   InboxIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUIStore } from '@/lib/stores/uiStore';
 
 interface NavigationItem {
   name: string;
@@ -208,7 +209,9 @@ const SignOutButton = memo(({ onSignOut }: { onSignOut: () => void }) => (
 SignOutButton.displayName = 'SignOutButton';
 
 export const Sidebar = memo(() => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobileMenuOpen = useUIStore((state) => state.isMobileMenuOpen);
+  const openMobileMenu = useUIStore((state) => state.openMobileMenu);
+  const closeMobileMenu = useUIStore((state) => state.closeMobileMenu);
   const pathname = usePathname();
   const { user, hasPermission, signOut } = useAuth();
   const { todayPnL, todayTradesCount, loading } = useTodayStats();
@@ -248,16 +251,16 @@ export const Sidebar = memo(() => {
   }, [signOut]);
 
   const handleMobileMenuOpen = useCallback(() => {
-    setIsMobileMenuOpen(true);
-  }, []);
+    openMobileMenu();
+  }, [openMobileMenu]);
 
   const handleMobileMenuClose = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
+    closeMobileMenu();
+  }, [closeMobileMenu]);
 
   const handleOverlayClick = useCallback(() => {
-    setIsMobileMenuOpen(false);
-  }, []);
+    closeMobileMenu();
+  }, [closeMobileMenu]);
 
   return (
     <>

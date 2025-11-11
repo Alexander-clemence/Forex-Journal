@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -23,12 +23,12 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { 
-  Brain, 
-  TrendingUp, 
-  TrendingDown, 
-  Calendar, 
-  Target, 
+import {
+  Brain,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Target,
   BarChart3,
   PieChart as PieChartIcon,
   Activity,
@@ -38,12 +38,14 @@ import {
 } from 'lucide-react';
 import { Trade } from '@/lib/types/trades';
 import { useTrades } from '@/lib/hooks/useTrades';
+import { useAnalyticsStore } from '@/lib/stores/analyticsStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#F59E0B', '#8B5CF6', '#06B6D4'];
 
 const moodColors: Record<string, string> = {
   confident: '#10B981',
-  analytical: '#3B82F6', 
+  analytical: '#3B82F6',
   cautious: '#F59E0B',
   frustrated: '#EF4444',
   disappointed: '#EF4444',
@@ -57,15 +59,24 @@ const moodColors: Record<string, string> = {
 
 export function TradingAnalytics() {
   const { trades, loading } = useTrades();
-  const [timeRange, setTimeRange] = useState('30d');
-  const [activeTab, setActiveTab] = useState('performance');
+  const {
+    timeRange,
+    activeTab,
+    setTimeRange,
+    setActiveTab,
+  } = useAnalyticsStore(useShallow((state) => ({
+    timeRange: state.timeRange,
+    activeTab: state.activeTab,
+    setTimeRange: state.setTimeRange,
+    setActiveTab: state.setActiveTab,
+  })));
 
   const filteredTrades = useMemo(() => {
     if (!trades.length) return [];
-    
+
     const now = new Date();
     const cutoffDate = new Date();
-    
+
     switch (timeRange) {
       case '7d':
         cutoffDate.setDate(now.getDate() - 7);
@@ -82,14 +93,14 @@ export function TradingAnalytics() {
       default:
         return trades;
     }
-    
+
     return trades.filter(trade => new Date(trade.entry_date) >= cutoffDate);
   }, [trades, timeRange]);
 
   // Performance Analytics
   const performanceData = useMemo(() => {
     const closedTrades = filteredTrades.filter(t => t.status === 'closed' && t.profit_loss !== null);
-    
+
     // Group by week for performance over time
     const weeklyData = closedTrades.reduce((acc, trade) => {
       const week = new Date(trade.entry_date).toISOString().slice(0, 10);
@@ -107,7 +118,7 @@ export function TradingAnalytics() {
       return acc;
     }, {} as Record<string, any>);
 
-    return Object.values(weeklyData).sort((a: any, b: any) => 
+    return Object.values(weeklyData).sort((a: any, b: any) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
   }, [filteredTrades]);
@@ -115,16 +126,16 @@ export function TradingAnalytics() {
   // Psychology Analytics
   const psychologyData = useMemo(() => {
     const tradesWithMood = filteredTrades.filter(t => t.mood);
-    
+
     // Mood distribution
     const moodDistribution = tradesWithMood.reduce((acc, trade) => {
       const mood = trade.mood!;
       if (!acc[mood]) {
-        acc[mood] = { 
-          mood, 
-          count: 0, 
-          totalPnL: 0, 
-          avgPnL: 0, 
+        acc[mood] = {
+          mood,
+          count: 0,
+          totalPnL: 0,
+          avgPnL: 0,
           winRate: 0,
           wins: 0,
           losses: 0
@@ -155,14 +166,14 @@ export function TradingAnalytics() {
   // Market Sentiment Analytics
   const sentimentData = useMemo(() => {
     const tradesWithSentiment = filteredTrades.filter(t => t.market_sentiment);
-    
+
     const sentimentAnalysis = tradesWithSentiment.reduce((acc, trade) => {
       const sentiment = trade.market_sentiment!;
       if (!acc[sentiment]) {
-        acc[sentiment] = { 
-          sentiment, 
-          count: 0, 
-          totalPnL: 0, 
+        acc[sentiment] = {
+          sentiment,
+          count: 0,
+          totalPnL: 0,
           avgPnL: 0,
           winRate: 0,
           wins: 0,
@@ -193,14 +204,14 @@ export function TradingAnalytics() {
   // Strategy Performance
   const strategyData = useMemo(() => {
     const tradesWithStrategy = filteredTrades.filter(t => t.strategy);
-    
+
     const strategyAnalysis = tradesWithStrategy.reduce((acc, trade) => {
       const strategy = trade.strategy!;
       if (!acc[strategy]) {
-        acc[strategy] = { 
-          strategy, 
-          count: 0, 
-          totalPnL: 0, 
+        acc[strategy] = {
+          strategy,
+          count: 0,
+          totalPnL: 0,
           avgPnL: 0,
           winRate: 0,
           wins: 0,
@@ -231,14 +242,14 @@ export function TradingAnalytics() {
   // Performance Rating Analytics
   const ratingData = useMemo(() => {
     const tradesWithRating = filteredTrades.filter(t => t.performance_rating);
-    
+
     const ratingAnalysis = tradesWithRating.reduce((acc, trade) => {
       const rating = trade.performance_rating!;
       if (!acc[rating]) {
-        acc[rating] = { 
-          rating, 
-          count: 0, 
-          totalPnL: 0, 
+        acc[rating] = {
+          rating,
+          count: 0,
+          totalPnL: 0,
           avgPnL: 0,
           winRate: 0,
           wins: 0,
@@ -294,7 +305,7 @@ export function TradingAnalytics() {
             Analyze your trading performance, psychology, and patterns
           </p>
         </div>
-        
+
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger className="w-32">
             <SelectValue />
@@ -334,11 +345,11 @@ export function TradingAnalytics() {
                     <XAxis dataKey="date" />
                     <YAxis tickFormatter={formatCurrency} />
                     <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'P&L']} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="pnl" 
-                      stroke="#3B82F6" 
-                      fill="#3B82F6" 
+                    <Area
+                      type="monotone"
+                      dataKey="pnl"
+                      stroke="#3B82F6"
+                      fill="#3B82F6"
                       fillOpacity={0.1}
                     />
                   </AreaChart>
@@ -360,10 +371,10 @@ export function TradingAnalytics() {
                     <XAxis dataKey="date" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Win Rate']} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="winRate" 
-                      stroke="#10B981" 
+                    <Line
+                      type="monotone"
+                      dataKey="winRate"
+                      stroke="#10B981"
                       strokeWidth={2}
                       dot={{ fill: '#10B981' }}
                     />
@@ -383,11 +394,11 @@ export function TradingAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="rating" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value, name) => [
                       name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
                       name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
-                    ]} 
+                    ]}
                   />
                   <Legend />
                   <Bar dataKey="avgPnL" fill="#3B82F6" name="Avg P&L" />
@@ -417,9 +428,9 @@ export function TradingAnalytics() {
                     <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Avg P&L']} />
                     <Bar dataKey="avgPnL">
                       {psychologyData.map((entry: any, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={moodColors[entry.mood] || '#6B7280'} 
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={moodColors[entry.mood] || '#6B7280'}
                         />
                       ))}
                     </Bar>
@@ -470,11 +481,11 @@ export function TradingAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="sentiment" />
                   <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value, name) => [
                       name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
                       name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
-                    ]} 
+                    ]}
                   />
                   <Legend />
                   <Bar dataKey="avgPnL" fill="#8B5CF6" name="Avg P&L" />
@@ -500,11 +511,11 @@ export function TradingAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tickFormatter={formatCurrency} />
                   <YAxis type="category" dataKey="strategy" width={100} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value, name) => [
                       name === 'totalPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
                       name === 'totalPnL' ? 'Total P&L' : 'Win Rate'
-                    ]} 
+                    ]}
                   />
                   <Legend />
                   <Bar dataKey="totalPnL" fill="#3B82F6" name="Total P&L" />
