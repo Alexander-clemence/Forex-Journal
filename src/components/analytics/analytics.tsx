@@ -39,6 +39,7 @@ import {
 import { Trade } from '@/lib/types/trades';
 import { useTrades } from '@/lib/hooks/useTrades';
 import { useAnalyticsStore } from '@/lib/stores/analyticsStore';
+import type { AnalyticsTab } from '@/lib/stores/analyticsStore';
 import { useShallow } from 'zustand/react/shallow';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#F59E0B', '#8B5CF6', '#06B6D4'];
