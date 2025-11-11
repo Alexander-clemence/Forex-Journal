@@ -320,7 +320,7 @@ export function TradingAnalytics() {
         </Select>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="psychology">Psychology</TabsTrigger>
