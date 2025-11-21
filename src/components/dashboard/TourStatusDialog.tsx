@@ -9,7 +9,6 @@ const TOUR_LABELS: Record<TourKey, string> = {
   dashboard: 'Dashboard',
   trades: 'Trades',
   analytics: 'Analytics',
-  login: 'Login',
 };
 
 interface TourStatusDialogProps {
