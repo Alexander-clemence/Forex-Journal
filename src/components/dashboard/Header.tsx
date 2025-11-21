@@ -27,7 +27,6 @@ const mapPathToTour = (path?: string | null): TourKey => {
   if (!path) return 'dashboard';
   if (path.startsWith('/dashboard/trades')) return 'trades';
   if (path.startsWith('/dashboard/analytics')) return 'analytics';
-  if (path.startsWith('/login')) return 'login';
   return 'dashboard';
 };
 

@@ -69,18 +69,6 @@ const tourSteps: Record<TourKey, Step[]> = {
       description: 'See how the current range stacks up against the previous period.',
     },
   ],
-  login: [
-    {
-      selector: '[data-tour="login-form"]',
-      title: 'Secure login',
-      description: 'Email and password stay encrypted in transit. Use the eye icon to preview input.',
-    },
-    {
-      selector: '[data-tour="login-highlights"]',
-      title: 'Value highlights',
-      description: 'We remind new users of key benefits while they prepare to sign in.',
-    },
-  ],
 };
 
 const HIGHLIGHT_PADDING = 12;
@@ -101,7 +89,6 @@ const mapPathToTour = (path?: string | null): TourKey => {
   if (!path) return 'dashboard';
   if (path.startsWith('/dashboard/trades')) return 'trades';
   if (path.startsWith('/dashboard/analytics')) return 'analytics';
-  if (path.startsWith('/login')) return 'login';
   return 'dashboard';
 };
 

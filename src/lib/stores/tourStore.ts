@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type TourKey = 'dashboard' | 'trades' | 'analytics' | 'login';
+export type TourKey = 'dashboard' | 'trades' | 'analytics';
 
 interface TourState {
   step: number;
@@ -24,7 +24,6 @@ const INITIAL_HAS_SEEN: Record<TourKey, boolean> = {
   dashboard: false,
   trades: false,
   analytics: false,
-  login: false,
 };
 
 export const useTourStore = create<TourState>()(
