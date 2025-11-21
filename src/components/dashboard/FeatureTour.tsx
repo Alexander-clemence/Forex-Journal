@@ -11,7 +11,7 @@ type Step = {
   description: string;
 };
 
-const tourSteps: Record<string, Step[]> = {
+const tourSteps: Record<TourKey, Step[]> = {
   dashboard: [
     {
       selector: '[data-tour="stats-grid"]',
@@ -92,14 +92,12 @@ type Rect = {
   height: number;
 };
 
-type TourName = keyof typeof tourSteps;
-
 type FeatureTourProps = {
-  tour?: TourName;
+  tour?: TourKey;
   stepsOverride?: Step[];
 };
 
-const mapPathToTour = (path?: string | null): TourName => {
+const mapPathToTour = (path?: string | null): TourKey => {
   if (!path) return 'dashboard';
   if (path.startsWith('/dashboard/trades')) return 'trades';
   if (path.startsWith('/dashboard/analytics')) return 'analytics';
