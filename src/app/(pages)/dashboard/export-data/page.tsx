@@ -56,6 +56,7 @@ export default function ExportDataPage() {
   return (
     <div className="space-y-6">
       <SectionHeading
+        id="export-data-heading"
         title="Export Data"
         description="Generate and download PDF reports of your trading performance and history"
       />

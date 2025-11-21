@@ -7,6 +7,7 @@ const page = () => {
   return (
     <div className="space-y-6">
       <SectionHeading
+        id="user-management-heading"
         title="User Management"
         description="Manage user accounts, roles, and permissions for your trading journal"
       />
