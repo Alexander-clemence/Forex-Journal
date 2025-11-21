@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { TrendingUp, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { SkipNavLink, SkipNavContent } from '@/components/ui/skip-nav';
-import { FeatureTour } from '@/components/dashboard/FeatureTour';
 
 // Welcome Back Screen for Already Signed-in Users
 function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
@@ -452,7 +451,6 @@ export default function LoginPage() {
       {isSubmitting && <LoginLoadingOverlay />}
 
       <div className="relative min-h-screen bg-slate-950 text-white">
-        <FeatureTour tour="login" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.25),transparent_45%)] opacity-70" />
         <SkipNavLink href="#login-form" className="m-4" />
 
