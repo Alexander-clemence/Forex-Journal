@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Button } from '@/components/ui/button';
-import { useTourStore } from '@/lib/stores/tourStore';
+import { useTourStore, type TourKey } from '@/lib/stores/tourStore';
 import { usePathname } from 'next/navigation';
 
 type Step = {
