@@ -337,32 +337,33 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
           Manage your account settings and preferences
         </p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile" className="flex items-center space-x-2">
-            <User className="h-4 w-4" />
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-2 h-auto">
+          <TabsTrigger value="profile" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
+            <User className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Profile</span>
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center space-x-2">
-            <SettingsIcon className="h-4 w-4" />
+          <TabsTrigger value="preferences" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
+            <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Preferences</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center space-x-2">
-            <Bell className="h-4 w-4" />
-            <span>Notifications</span>
+          <TabsTrigger value="notifications" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
+            <Bell className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Notifications</span>
+            <span className="sm:hidden">Notify</span>
           </TabsTrigger>
-          <TabsTrigger value="updates" className="flex items-center space-x-2">
-            <Download className="h-4 w-4" />
+          <TabsTrigger value="updates" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
+            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Updates</span>
           </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center space-x-2">
-            <Shield className="h-4 w-4" />
+          <TabsTrigger value="security" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2 col-span-2 sm:col-span-1">
+            <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Security</span>
           </TabsTrigger>
         </TabsList>
@@ -486,7 +487,7 @@ export default function SettingsPage() {
               <div>
                 <Label className="text-base font-medium">Trading Preferences</Label>
                 <div className="space-y-4 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="defaultPositionSize">Default Position Size</Label>
                       <Input

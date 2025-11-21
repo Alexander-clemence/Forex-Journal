@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { PnLChart } from '@/components/analytics/PnLChart';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { StatsCards } from '@/components/dashboard/StatsCard';
+import { SectionHeading } from '@/components/dashboard/SectionHeading';
 import { RecentTradesCard } from '@/components/dashboard/RecentTradesard';
 import { MarketStatus } from '@/components/dashboard/MarketStatus';
 import { useTrades } from '@/lib/hooks/useTrades';
@@ -364,13 +365,28 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Cards */}
-      <StatsCards stats={stats} />
+      <section aria-labelledby="stats-heading" className="space-y-4">
+        <SectionHeading
+          id="stats-heading"
+          title="Performance snapshot"
+          description="Keep the most important KPIs at the top of your hierarchy for faster decision making."
+        />
+        <div data-tour="stats-grid">
+          <StatsCards stats={stats} />
+        </div>
+      </section>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* P&L Chart */}
-        <div className="lg:col-span-2">
-          <Card>
+      <section aria-labelledby="insights-heading" className="space-y-4">
+        <SectionHeading
+          id="insights-heading"
+          title="Insights & journal"
+          description="Compare time periods, scan recent trades, and keep quick tools within reach."
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* P&L Chart */}
+          <div className="lg:col-span-2">
+            <Card data-tour="analytics-preview">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -391,24 +407,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          <QuickActions />
-          
-          <TodaySummaryCard 
-            stats={stats}
-            currentBalance={currentBalance}
-          />
-
-          <AccountCard
-            currentBalance={currentBalance}
-            baseBalance={baseBalance}
-            tradePnL={tradePnL}
-          />
+          {/* Right Sidebar */}
+          <div className="space-y-6" data-tour="quick-actions">
+            <QuickActions />
             
-          <MarketStatus />
+            <TodaySummaryCard 
+              stats={stats}
+              currentBalance={currentBalance}
+            />
+
+            <AccountCard
+              currentBalance={currentBalance}
+              baseBalance={baseBalance}
+              tradePnL={tradePnL}
+            />
+              
+            <MarketStatus />
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

@@ -112,14 +112,14 @@ export const TradeFilters = memo(function TradeFilters({ filters, onFiltersChang
           onClear={() => clearFilter('status')}
         >
           <Select
-            value={filters.status || ''}
-            onValueChange={(value) => updateFilter('status', value || undefined)}
+            value={filters.status ?? 'all'}
+            onValueChange={(value) => updateFilter('status', value === 'all' ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -135,14 +135,14 @@ export const TradeFilters = memo(function TradeFilters({ filters, onFiltersChang
           onClear={() => clearFilter('side')}
         >
           <Select
-            value={filters.side || ''}
-            onValueChange={(value) => updateFilter('side', value || undefined)}
+            value={filters.side ?? 'all'}
+            onValueChange={(value) => updateFilter('side', value === 'all' ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All Sides" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Sides</SelectItem>
+              <SelectItem value="all">All Sides</SelectItem>
               <SelectItem value="buy">Buy</SelectItem>
               <SelectItem value="sell">Sell</SelectItem>
               <SelectItem value="long">Long</SelectItem>
@@ -212,14 +212,14 @@ export const TradeFilters = memo(function TradeFilters({ filters, onFiltersChang
             onClear={() => clearFilter('mood')}
           >
             <Select
-              value={filters.mood || ''}
-              onValueChange={(value) => updateFilter('mood', value || undefined)}
+              value={filters.mood ?? 'all'}
+              onValueChange={(value) => updateFilter('mood', value === 'all' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Moods" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Moods</SelectItem>
+                <SelectItem value="all">All Moods</SelectItem>
                 {MOOD_OPTIONS.map(mood => (
                   <SelectItem key={mood} value={mood}>
                     {capitalize(mood)}
@@ -237,14 +237,14 @@ export const TradeFilters = memo(function TradeFilters({ filters, onFiltersChang
             onClear={() => clearFilter('market_sentiment')}
           >
             <Select
-              value={filters.market_sentiment || ''}
-              onValueChange={(value) => updateFilter('market_sentiment', value || undefined)}
+              value={filters.market_sentiment ?? 'all'}
+              onValueChange={(value) => updateFilter('market_sentiment', value === 'all' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Sentiments" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Sentiments</SelectItem>
+                <SelectItem value="all">All Sentiments</SelectItem>
                 {MARKET_SENTIMENT_OPTIONS.map(sentiment => (
                   <SelectItem key={sentiment} value={sentiment}>
                     {capitalize(sentiment)}
@@ -262,14 +262,16 @@ export const TradeFilters = memo(function TradeFilters({ filters, onFiltersChang
             onClear={() => clearFilter('performance_rating')}
           >
             <Select
-              value={filters.performance_rating?.toString() || ''}
-              onValueChange={(value) => updateFilter('performance_rating', value ? parseInt(value) : undefined)}
+              value={filters.performance_rating?.toString() ?? 'all'}
+              onValueChange={(value) =>
+                updateFilter('performance_rating', value === 'all' ? undefined : parseInt(value, 10))
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Ratings" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Ratings</SelectItem>
+                <SelectItem value="all">All Ratings</SelectItem>
                 {PERFORMANCE_RATINGS.map(({ value, label }) => (
                   <SelectItem key={value} value={value}>
                     {label}

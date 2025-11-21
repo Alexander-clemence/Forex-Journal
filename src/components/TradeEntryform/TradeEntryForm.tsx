@@ -87,23 +87,23 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
   }, [onCancel, router]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <Card>
+    <div className="w-full max-w-4xl mx-auto px-3 sm:px-0">
+      <Card className="border border-slate-200/80 dark:border-slate-800 shadow-sm">
         <CardHeader>
           <CardTitle>{initialData ? 'Edit Trade' : 'New Trade'}</CardTitle>
           <CardDescription>Simple trade journal entry</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="w-full grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                 <TabsTrigger value="trade">Trade Details</TabsTrigger>
                 <TabsTrigger value="journal">Journal</TabsTrigger>
               </TabsList>
 
               <TabsContent value="trade" className="space-y-4 mt-4">
                 {/* Basic Trade Info */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <div className="space-y-2">
                     <Label htmlFor="symbol">Symbol *</Label>
                     <Input 
@@ -175,7 +175,7 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
                 </div>
 
                 {/* Prices */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <div className="space-y-2">
                     <Label htmlFor="entry_price">Entry Price *</Label>
                     <Input 

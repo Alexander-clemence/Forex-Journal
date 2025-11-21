@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 type TimeRange = '7d' | '30d' | '90d' | '1y' | 'all';
 
-export type AnalyticsTab = 'performance' | 'psychology' | 'strategy' | 'insights';
+export type AnalyticsTab = 'performance' | 'psychology' | 'strategy' | 'insights' | 'timeline';
 
 interface AnalyticsState {
   timeRange: TimeRange;

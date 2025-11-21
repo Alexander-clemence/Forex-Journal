@@ -112,6 +112,16 @@ const NavItem = memo(({
     onClose();
   }, [onClose]);
 
+  // Determine icon color class
+  let iconClass: string;
+  if (isActive) {
+    iconClass = 'text-blue-600 dark:text-blue-400';
+  } else if (isAdminOnly) {
+    iconClass = 'text-blue-500 group-hover:text-blue-600';
+  } else {
+    iconClass = 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300';
+  }
+
   return (
     <Link
       href={item.href}
@@ -125,14 +135,7 @@ const NavItem = memo(({
       )}
     >
       <item.icon
-        className={cn(
-          'mr-3 h-5 w-5 flex-shrink-0',
-          isActive
-            ? 'text-blue-600 dark:text-blue-400'
-            : isAdminOnly
-            ? 'text-blue-500 group-hover:text-blue-600'
-            : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-        )}
+        className={cn('mr-3 h-5 w-5 flex-shrink-0', iconClass)}
       />
       {item.name}
       {isAdminOnly && (
@@ -213,7 +216,7 @@ export const Sidebar = memo(() => {
   const openMobileMenu = useUIStore((state) => state.openMobileMenu);
   const closeMobileMenu = useUIStore((state) => state.closeMobileMenu);
   const pathname = usePathname();
-  const { user, hasPermission, signOut } = useAuth();
+  const { user, hasPermission, permissions, signOut } = useAuth();
   const { todayPnL, todayTradesCount, loading } = useTodayStats();
 
   // Memoize user data
@@ -222,15 +225,15 @@ export const Sidebar = memo(() => {
     displayName: user?.user_metadata?.display_name,
   }), [user?.email, user?.user_metadata?.display_name]);
 
-  // Memoize filtered navigation
+  // Memoize filtered navigation - include permissions in dependency array for role consistency
   const visibleNavigation = useMemo(() => 
     navigation.filter(item => !item.permission || hasPermission(item.permission)),
-    [hasPermission]
+    [hasPermission, permissions]
   );
 
   const visibleAdminNavigation = useMemo(() =>
     adminNavigation.filter(item => !item.permission || hasPermission(item.permission)),
-    [hasPermission]
+    [hasPermission, permissions]
   );
 
   const allNavigation = useMemo(() => 
@@ -247,7 +250,7 @@ export const Sidebar = memo(() => {
   // Memoized handlers
   const handleSignOut = useCallback(async () => {
     await signOut();
-    window.location.href = '/';
+    globalThis.location.href = '/';
   }, [signOut]);
 
   const handleMobileMenuOpen = useCallback(() => {
@@ -278,9 +281,14 @@ export const Sidebar = memo(() => {
 
       {/* Mobile menu overlay */}
       {isMobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
+        <button
+          type="button"
+          className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50 border-0 p-0 cursor-pointer"
           onClick={handleOverlayClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') handleOverlayClick();
+          }}
+          aria-label="Close menu"
         />
       )}
 

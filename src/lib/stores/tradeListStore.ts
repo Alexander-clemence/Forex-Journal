@@ -3,8 +3,8 @@ import type { TradeFilters } from '@/lib/types/trades';
 
 const ITEMS_PER_PAGE = 15;
 
-type SortField = 'date' | 'pnl' | 'symbol';
-type SortOrder = 'asc' | 'desc';
+export type SortField = 'date' | 'pnl' | 'symbol';
+export type SortOrder = 'asc' | 'desc';
 
 interface TradeListState {
   searchTerm: string;

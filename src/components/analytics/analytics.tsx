@@ -41,6 +41,8 @@ import { useTrades } from '@/lib/hooks/useTrades';
 import { useAnalyticsStore } from '@/lib/stores/analyticsStore';
 import type { AnalyticsTab } from '@/lib/stores/analyticsStore';
 import { useShallow } from 'zustand/react/shallow';
+import { TradeTimeline } from '@/components/analytics/TradeTimeline';
+import { SectionHeading } from '@/components/dashboard/SectionHeading';
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6', '#F59E0B', '#8B5CF6', '#06B6D4'];
 
@@ -56,6 +58,14 @@ const moodColors: Record<string, string> = {
   optimistic: '#059669',
   neutral: '#6B7280',
   anxious: '#F97316'
+};
+
+const tabDescriptions: Record<AnalyticsTab, string> = {
+  performance: 'Track profitability, win rate trends, and compare periods to understand momentum.',
+  psychology: 'See how mood and sentiment impact results so you can adapt your mindset in real time.',
+  strategy: 'Identify which playbooks are carrying your equity curve and which need a tune-up.',
+  insights: 'Curated callouts highlight patterns, quick wins, and areas to investigate.',
+  timeline: 'Scroll through trades chronologically to understand streaks and market context.',
 };
 
 export function TradingAnalytics() {
@@ -287,6 +297,85 @@ export function TradingAnalytics() {
     }).format(value);
   };
 
+  const formatPercentage = (value: number) => `${value.toFixed(1)}%`;
+
+  const rangeDays = useMemo(() => {
+    switch (timeRange) {
+      case '7d':
+        return 7;
+      case '30d':
+        return 30;
+      case '90d':
+        return 90;
+      case '1y':
+        return 365;
+      default:
+        return null;
+    }
+  }, [timeRange]);
+
+  const comparisonStats = useMemo(() => {
+    if (!rangeDays) return [];
+    const now = new Date();
+    const currentStart = new Date(now);
+    currentStart.setDate(currentStart.getDate() - rangeDays);
+    const previousEnd = new Date(currentStart);
+    const previousStart = new Date(previousEnd);
+    previousStart.setDate(previousStart.getDate() - rangeDays);
+
+    const inRange = (trade: Trade, start: Date, end: Date) => {
+      if (!trade.entry_date) return false;
+      const date = new Date(trade.entry_date);
+      return date >= start && date <= end;
+    };
+
+    const currentTrades = trades.filter((trade) => inRange(trade, currentStart, now));
+    const previousTrades = trades.filter((trade) => inRange(trade, previousStart, previousEnd));
+
+    const computeStats = (list: Trade[]) => {
+      const closed = list.filter((t) => t.status === 'closed' && t.profit_loss !== null);
+      const pnl = closed.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
+      const wins = closed.filter((t) => (t.profit_loss || 0) > 0);
+      const winRate = closed.length > 0 ? (wins.length / closed.length) * 100 : 0;
+      const durations = closed
+        .filter((t) => t.entry_date && t.exit_date)
+        .map((t) => {
+          const start = new Date(t.entry_date!);
+          const end = new Date(t.exit_date!);
+          return (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+        });
+      const avgDuration = durations.length
+        ? durations.reduce((sum, d) => sum + d, 0) / durations.length
+        : 0;
+      return { pnl, winRate, avgDuration };
+    };
+
+    const current = computeStats(currentTrades);
+    const previous = computeStats(previousTrades);
+    const diff = (currentValue: number, prevValue: number) => currentValue - prevValue;
+
+    return [
+      {
+        label: 'Total P&L',
+        value: formatCurrency(current.pnl),
+        delta: diff(current.pnl, previous.pnl),
+        formatter: formatCurrency,
+      },
+      {
+        label: 'Win Rate',
+        value: formatPercentage(current.winRate),
+        delta: diff(current.winRate, previous.winRate),
+        formatter: (val: number) => `${val.toFixed(1)}%`,
+      },
+      {
+        label: 'Avg Duration',
+        value: `${current.avgDuration.toFixed(1)}d`,
+        delta: diff(current.avgDuration, previous.avgDuration),
+        formatter: (val: number) => `${val.toFixed(1)}d`,
+      },
+    ];
+  }, [trades, rangeDays, timeRange]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -297,40 +386,73 @@ export function TradingAnalytics() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Trading Analytics</h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Analyze your trading performance, psychology, and patterns
-          </p>
+    <div className="space-y-8">
+      <section aria-labelledby="analytics-heading" className="space-y-4">
+        <SectionHeading
+          id="analytics-heading"
+          title="Trading analytics"
+          description="Explore performance drivers, psychological patterns, and actionable insights across your journal."
+          tourId="analytics-heading"
+        >
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="1y">Last year</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+        </SectionHeading>
+        <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          {tabDescriptions[activeTab]}
         </div>
+      </section>
 
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-            <SelectItem value="1y">Last year</SelectItem>
-            <SelectItem value="all">All time</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as AnalyticsTab)}
+        className="w-full space-y-6"
+      >
+        <TabsList className="grid w-full grid-cols-5 gap-2" data-tour="tabs-list">
           <TabsTrigger value="performance">Performance</TabsTrigger>
           <TabsTrigger value="psychology">Psychology</TabsTrigger>
           <TabsTrigger value="strategy">Strategy</TabsTrigger>
           <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
 
         {/* Performance Analytics */}
         <TabsContent value="performance" className="space-y-6">
+          {comparisonStats.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="comparison-cards">
+              {comparisonStats.map((stat) => {
+                const delta = stat.delta;
+                const isPositive = delta >= 0;
+                return (
+                  <Card key={stat.label}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-muted-foreground">{stat.label}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
+                      <p
+                        className={`text-sm font-medium ${
+                          isPositive ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
+                        {isPositive ? '+' : '-'}
+                        {stat.formatter(Math.abs(delta))} vs previous period
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -639,6 +761,24 @@ export function TradingAnalytics() {
                   <div className="text-sm text-gray-600">With Lessons</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Timeline */}
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Trade Timeline
+              </CardTitle>
+              <CardDescription>
+                Chronological view of trades for the selected timeframe—helpful for spotting streaks and context.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TradeTimeline trades={filteredTrades} />
             </CardContent>
           </Card>
         </TabsContent>

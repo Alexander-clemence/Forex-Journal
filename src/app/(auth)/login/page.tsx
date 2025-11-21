@@ -8,8 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { TrendingUp, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { SkipNavLink, SkipNavContent } from '@/components/ui/skip-nav';
+import { FeatureTour } from '@/components/dashboard/FeatureTour';
 
 // Welcome Back Screen for Already Signed-in Users
 function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
@@ -366,6 +368,21 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
 
+  const highlights = [
+    {
+      title: 'Frictionless journaling',
+      description: 'Log trades in seconds with keyboard shortcuts and saved presets.'
+    },
+    {
+      title: 'Psychology checks',
+      description: 'Tag moods and market sentiment so you can spot behavioral patterns.'
+    },
+    {
+      title: 'Security first',
+      description: '2FA-ready auth, encrypted Supabase storage, and inactivity guards.'
+    }
+  ];
+
   // Handle signed-in users with welcome back screen
   useEffect(() => {
     if (user && !loading) {
@@ -432,127 +449,154 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Show loading overlay when submitting */}
       {isSubmitting && <LoginLoadingOverlay />}
-      
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          {/* Header */}
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-2xl font-bold text-gray-900 dark:text-white">
-                Trading Journal
-              </span>
+
+      <div className="relative min-h-screen bg-slate-950 text-white">
+        <FeatureTour tour="login" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.25),transparent_45%)] opacity-70" />
+        <SkipNavLink href="#login-form" className="m-4" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-16 px-6 py-16 lg:grid-cols-2">
+          <div className="space-y-6">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-blue-300">FX Journal</p>
+              <h1 className="mt-3 text-4xl font-semibold leading-tight text-white">
+                Own your process.<br />
+                Trade with clarity.
+              </h1>
+              <p className="mt-4 text-base text-slate-300 max-w-xl">
+                We combine structured journaling, psychology tracking, and institutional-grade analytics so every trade
+                becomes a lesson—not a guess.
+              </p>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Welcome back
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Sign in to your trading journal
-            </p>
-          </div>
 
-          {/* Login Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Sign In</CardTitle>
-              <CardDescription>
-                Enter your email and password to access your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    disabled={isSubmitting}
-                    autoComplete="email"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      required
-                      disabled={isSubmitting}
-                      autoComplete="current-password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isSubmitting}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
+            <dl
+              className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+              data-tour="login-highlights"
+            >
+              {highlights.map((item) => (
+                <div key={item.title} className="flex gap-3">
+                  <ShieldCheck className="mt-1 h-5 w-5 text-blue-300" />
+                  <div>
+                    <dt className="font-medium text-white">{item.title}</dt>
+                    <dd className="text-sm text-slate-300">{item.description}</dd>
                   </div>
                 </div>
+              ))}
+            </dl>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Signing in...
-                    </>
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center space-y-2">
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  Forgot your password?
-                </Link>
-                
+            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+              <div>
+                <p className="font-semibold text-white">New here?</p>
+                <span>Save trades and revisit insights anytime.</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Back to landing */}
-          <div className="text-center">
-            <Link
-              href="/"
-              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-            >
-              ← Back to home
-            </Link>
+              <div>
+                <p className="font-semibold text-white">Need help?</p>
+                <Link href="/support" className="text-blue-300 underline-offset-4 hover:underline">
+                  Contact support
+                </Link>
+              </div>
+            </div>
           </div>
+
+          <SkipNavContent id="login-form">
+            <div
+              data-tour="login-form"
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/80 p-6 shadow-2xl backdrop-blur"
+            >
+              <div className="mb-6 text-center">
+                <div className="flex items-center justify-center gap-3 text-white">
+                  <TrendingUp className="h-7 w-7 text-blue-400" />
+                  <span className="text-2xl font-semibold">Sign in to FX Journal</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">Secure access to your trading workspace</p>
+              </div>
+
+              <Card className="bg-slate-950/50 border-white/5">
+                <CardHeader>
+                  <CardTitle className="text-white">Welcome back</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Enter your credentials to continue tracking progress.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                      <Alert variant="destructive" role="alert">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="name@broker.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        disabled={isSubmitting}
+                        autoComplete="email"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          required
+                          disabled={isSubmitting}
+                          autoComplete="current-password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={isSubmitting}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          aria-pressed={showPassword}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Signing in…
+                        </>
+                      ) : (
+                        'Sign in'
+                      )}
+                    </Button>
+                  </form>
+
+                  <div className="mt-6 text-center text-sm text-slate-400">
+                    <Link href="/forgot-password" className="text-blue-300 hover:underline">
+                      Forgot your password?
+                    </Link>
+                    <div className="mt-2">
+                      <Link href="/" className="hover:text-white">
+                        ← Back to home
+                      </Link>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </SkipNavContent>
         </div>
       </div>
     </>

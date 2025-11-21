@@ -22,6 +22,7 @@ import {
   RefreshCw,
   UserPlus
 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // Use the types from your database.ts file
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -297,10 +298,10 @@ export default function UserManagement() {
 
   if (!authData || !authData.hasPermission) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -308,13 +309,13 @@ export default function UserManagement() {
 
   if (!authData.hasPermission('users.manage')) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg max-w-md">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-            <AlertCircle className="h-6 w-6 text-red-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg max-w-md border border-gray-200 dark:border-gray-700">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+            <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to manage users.</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Access Denied</h1>
+          <p className="text-gray-600 dark:text-gray-300">You don't have permission to manage users.</p>
         </div>
       </div>
     );
@@ -322,47 +323,33 @@ export default function UserManagement() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading users...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Loading users...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-                <p className="text-gray-600">Manage user accounts, roles, and permissions</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button 
-                onClick={loadUsers} 
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span>Refresh</span>
-              </button>
-              <button 
-                onClick={() => setShowSignupModal(true)} 
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span>Add User</span>
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-end space-x-2 sm:space-x-3">
+        <button 
+          onClick={loadUsers} 
+          className="px-3 sm:px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex items-center space-x-1.5 sm:space-x-2 text-sm"
+        >
+          <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+        <button 
+          onClick={() => setShowSignupModal(true)} 
+          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1.5 sm:space-x-2 text-sm"
+        >
+          <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span>Add User</span>
+        </button>
+      </div>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
@@ -388,53 +375,53 @@ export default function UserManagement() {
           </div>
         )}
 
-        <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm mb-4 sm:mb-6 border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 sm:left-3 top-2.5 sm:top-3 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search users by name, email, or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm sm:text-base"
               />
             </div>
             <div className="relative">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 sm:px-4 py-2 pr-7 sm:pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white text-sm sm:text-base w-full sm:w-auto"
               >
                 <option value="all">All Roles</option>
                 {roleOptions.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
               </select>
-              <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+              <ChevronDown className="absolute right-2 top-2.5 sm:top-3 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
               </div>
             </div>
           </div>
           {roleOptions.slice(0, 3).map(role => (
-            <div key={role.value} className="bg-white p-6 rounded-xl shadow-sm">
+            <div key={role.value} className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="flex items-center">
-                <div className={`p-2 ${role.bgColor} rounded-lg`}>
-                  <role.icon className={`h-6 w-6 ${role.color}`} />
+                <div className={`p-2 ${role.bgColor} dark:bg-opacity-20 rounded-lg`}>
+                  <role.icon className={`h-6 w-6 ${role.color} dark:text-${role.color.split('-')[1]}-400`} />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">{role.label}s</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{role.label}s</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {users.filter(u => u.role === role.value).length}
                   </p>
                 </div>
@@ -443,29 +430,29 @@ export default function UserManagement() {
           ))}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Users ({filteredUsers.length})</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
+          <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">Users ({filteredUsers.length})</h3>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+            <Table>
+              <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
+                <TableRow>
+                  <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">User</TableHead>
+                  <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Role</TableHead>
+                  <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 hidden sm:table-cell">Created</TableHead>
+                  <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredUsers.map((user) => {
                   const roleConfig = getRoleConfig(user.role);
                   const isEditing = editingUser === user.id;
                   
                   return (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <TableRow key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 align-top">
                         {isEditing ? (
                           <div className="space-y-2">
                             <input
@@ -473,14 +460,14 @@ export default function UserManagement() {
                               value={editForm.displayName}
                               onChange={(e) => setEditForm({...editForm, displayName: e.target.value})}
                               placeholder="Display Name"
-                              className="block w-full text-sm border border-gray-300 rounded px-2 py-1 text-gray-900"
+                              className="block w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
                             <input
                               type="text"
                               value={editForm.username}
                               onChange={(e) => setEditForm({...editForm, username: e.target.value})}
                               placeholder="Username"
-                              className="block w-full text-sm border border-gray-300 rounded px-2 py-1 text-gray-900"
+                              className="block w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             />
                           </div>
                         ) : (
@@ -493,23 +480,23 @@ export default function UserManagement() {
                               </div>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
                                 {user.display_name || user.email?.split('@')[0] || 'User'}
                               </div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                               {user.username && (
-                                <div className="text-xs text-gray-400">@{user.username}</div>
+                                <div className="text-xs text-gray-400 dark:text-gray-500">@{user.username}</div>
                               )}
                             </div>
                           </div>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
                         {isEditing ? (
                           <select
                             value={editForm.role}
                             onChange={(e) => setEditForm({...editForm, role: e.target.value})}
-                            className="text-sm border border-gray-300 rounded px-2 py-1 text-gray-900"
+                            className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           >
                             {roleOptions.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
                           </select>
@@ -523,17 +510,17 @@ export default function UserManagement() {
                             </span>
                           </div>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      </TableCell>
+                      <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
                           <div>
                             <div>{formatDate(user.created_at).split(',')[0]}</div>
-                            <div className="text-xs text-gray-400">{getTimeAgo(user.created_at)}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">{getTimeAgo(user.created_at)}</div>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      </TableCell>
+                      <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium">
                         {isEditing ? (
                           <div className="flex items-center space-x-2">
                             <button
@@ -580,18 +567,18 @@ export default function UserManagement() {
                             )}
                           </div>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
 
             {filteredUsers.length === 0 && (
               <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No users found</p>
-                <p className="text-sm text-gray-400 mt-2">
+                <Users className="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No users found</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
                   {searchTerm || roleFilter !== 'all' 
                     ? 'Try adjusting your search criteria' 
                     : 'Users will appear here once they sign up or are created by an admin'
@@ -604,9 +591,9 @@ export default function UserManagement() {
 
         {showSignupModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-semibold text-gray-900">Add New User</h2>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Add New User</h2>
                 <button
                   onClick={() => {
                     setShowSignupModal(false);
@@ -622,33 +609,33 @@ export default function UserManagement() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address *</label>
                   <input
                     type="email"
                     value={signupForm.email}
                     onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
                     placeholder="user@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Display Name</label>
                   <input
                     type="text"
                     value={signupForm.displayName}
                     onChange={(e) => setSignupForm({...signupForm, displayName: e.target.value})}
                     placeholder="John Doe"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
                   <select
                     value={signupForm.role}
                     onChange={(e) => setSignupForm({...signupForm, role: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     {roleOptions.map(role => (
                       <option key={role.value} value={role.value}>
@@ -659,14 +646,14 @@ export default function UserManagement() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={signupForm.password}
                       onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
                       placeholder="Minimum 6 characters"
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     />
                     <button
                       type="button"
@@ -712,7 +699,6 @@ export default function UserManagement() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

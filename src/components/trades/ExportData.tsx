@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Activity
 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -96,10 +98,10 @@ SuccessMessage.displayName = 'SuccessMessage';
 
 // Memoized Loading Spinner
 const LoadingSpinner = memo(() => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
     <div className="text-center">
-      <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-      <p className="text-gray-600">Loading...</p>
+      <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+      <p className="text-gray-600 dark:text-gray-300">Loading...</p>
     </div>
   </div>
 ));
@@ -115,9 +117,9 @@ const SummaryCard = memo(({
   label: string; 
   color: string;
 }) => (
-  <div className={`p-4 rounded-lg ${color}`}>
+  <div className={`p-4 rounded-lg border border-gray-200 dark:border-gray-700 ${color}`}>
     <div className="text-2xl font-bold">{value}</div>
-    <div className="text-sm">{label}</div>
+    <div className="text-sm opacity-90">{label}</div>
   </div>
 ));
 SummaryCard.displayName = 'SummaryCard';
@@ -138,20 +140,20 @@ const TradeRow = memo(({ trade }: { trade: Trade }) => {
   }, [trade.status]);
 
   return (
-    <tr>
-      <td className="px-4 py-2 text-sm font-medium text-gray-900">{trade.symbol}</td>
-      <td className="px-4 py-2 text-sm text-gray-500">{trade.side.toUpperCase()}</td>
-      <td className="px-4 py-2 text-sm text-gray-500">{trade.quantity}</td>
-      <td className="px-4 py-2 text-sm text-gray-500">{formatCurrency(trade.entry_price)}</td>
-      <td className={`px-4 py-2 text-sm font-medium ${pnlColor}`}>
+    <TableRow>
+      <TableCell className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium text-gray-900 dark:text-white">{trade.symbol}</TableCell>
+      <TableCell className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">{trade.side.toUpperCase()}</TableCell>
+      <TableCell className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">{trade.quantity}</TableCell>
+      <TableCell className="px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{formatCurrency(trade.entry_price)}</TableCell>
+      <TableCell className={cn("px-2 sm:px-3 lg:px-4 py-2 text-xs sm:text-sm font-medium", pnlColor)}>
         {trade.profit_loss ? formatCurrency(trade.profit_loss) : '-'}
-      </td>
-      <td className="px-4 py-2">
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColor}`}>
+      </TableCell>
+      <TableCell className="px-2 sm:px-3 lg:px-4 py-2">
+        <span className={`inline-flex px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full ${statusColor} dark:opacity-90`}>
           {trade.status.toUpperCase()}
         </span>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 });
 TradeRow.displayName = 'TradeRow';
@@ -472,39 +474,25 @@ export default function ExportDataComponent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Download className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Export My Data</h1>
-              <p className="text-gray-600">Generate PDF reports from your trading data</p>
-            </div>
-          </div>
-        </div>
-
+    <div className="space-y-6">
         {/* Messages */}
         {error && <ErrorMessage message={error} onClose={clearError} />}
         {success && <SuccessMessage message={success} onClose={clearSuccess} />}
 
         {/* Export Configuration */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Export Configuration</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Export Configuration</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 <FileText className="h-4 w-4 inline mr-1" />
                 Report Type
               </label>
               <select
                 value={exportType}
                 onChange={(e) => setExportType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 {exportTypes.map(type => (
                   <option key={type.value} value={type.value}>
@@ -515,14 +503,14 @@ export default function ExportDataComponent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 <Calendar className="h-4 w-4 inline mr-1" />
                 Date Range
               </label>
               <select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 {dateRanges.map(range => (
                   <option key={range.value} value={range.value}>
@@ -535,43 +523,43 @@ export default function ExportDataComponent() {
             {dateRange === 'custom' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">Start Date</label>
                   <input
                     type="date"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">End Date</label>
                   <input
                     type="date"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </>
             )}
           </div>
 
-          <div className="flex space-x-3 mt-6">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
             <button
               onClick={generatePreview}
               disabled={loading}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              className="px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+              {loading ? <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
               <span>Preview Data</span>
             </button>
             
             <button
               onClick={generatePDF}
               disabled={loading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {loading ? <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" /> : <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
               <span>Generate PDF</span>
             </button>
           </div>
@@ -579,16 +567,16 @@ export default function ExportDataComponent() {
 
         {/* Preview */}
         {previewData && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Data Preview</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Data Preview</h2>
             
             {previewData.profile && (
-              <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <h3 className="text-md font-medium text-blue-900 mb-2">Trader Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6">
+                <h3 className="text-sm sm:text-base font-medium text-blue-900 dark:text-blue-100 mb-2">Trader Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                   <div>
-                    <span className="text-blue-700 font-medium">Name: </span>
-                    <span className="text-blue-800">{previewData.profile.display_name || 'N/A'}</span>
+                    <span className="text-blue-700 dark:text-blue-300 font-medium">Name: </span>
+                    <span className="text-blue-800 dark:text-blue-200">{previewData.profile.display_name || 'N/A'}</span>
                   </div>
                   <div>
                     <span className="text-blue-700 font-medium">Email: </span>
@@ -607,72 +595,71 @@ export default function ExportDataComponent() {
             )}
             
             {summaryCards && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {summaryCards.map((card, index) => (
                   <SummaryCard key={index} {...card} />
                 ))}
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-lg font-bold text-green-600">{formatCurrency(previewData.summary.avgWin)}</div>
-                <div className="text-sm text-gray-600">Average Win</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-3 sm:p-4 rounded-lg">
+                <div className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(previewData.summary.avgWin)}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Average Win</div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-lg font-bold text-red-600">{formatCurrency(previewData.summary.avgLoss)}</div>
-                <div className="text-sm text-gray-600">Average Loss</div>
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                <div className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(previewData.summary.avgLoss)}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Average Loss</div>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                   {previewData.summary.avgWin > 0 && previewData.summary.avgLoss > 0 
                     ? (previewData.summary.avgWin / previewData.summary.avgLoss).toFixed(2)
                     : '0.00'
                   }
                 </div>
-                <div className="text-sm text-gray-600">Win/Loss Ratio</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Win/Loss Ratio</div>
               </div>
             </div>
 
             {(exportType === 'all' || exportType === 'trades') && previewData.trades.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-md font-medium text-gray-900 mb-3">Recent Trades (showing first 10)</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Symbol</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Side</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Entry</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">P&L</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3">Recent Trades (showing first 10)</h3>
+                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                  <Table>
+                    <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
+                      <TableRow>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Symbol</TableHead>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Side</TableHead>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Quantity</TableHead>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400 hidden sm:table-cell">Entry</TableHead>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">P&L</TableHead>
+                        <TableHead className="px-2 sm:px-3 lg:px-4 py-2 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {previewData.trades.slice(0, 10).map((trade) => (
                         <TradeRow key={trade.id} trade={trade} />
                       ))}
-                    </tbody>
-                  </table>
-                  {previewData.trades.length > 10 && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      ... and {previewData.trades.length - 10} more trades
-                    </p>
-                  )}
+                    </TableBody>
+                  </Table>
                 </div>
+                {previewData.trades.length > 10 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    ... and {previewData.trades.length - 10} more trades
+                  </p>
+                )}
               </div>
             )}
 
             {previewData.trades.length === 0 && (exportType === 'all' || exportType === 'trades') && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No trades found for the selected period</p>
               </div>
             )}
           </div>
         )}
-      </div>
     </div>
   );
 }
