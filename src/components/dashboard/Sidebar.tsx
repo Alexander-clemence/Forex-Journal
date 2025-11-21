@@ -2,12 +2,12 @@
 
 import { useMemo, useCallback, memo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTodayStats } from '@/lib/hooks/useTodayStats';
 import { Button } from '@/components/ui/button';
 import {
-  TrendingUp,
   BarChart3,
   PlusCircle,
   Settings,
@@ -49,10 +49,17 @@ const adminNavigation: NavigationItem[] = [
 // Memoized Header Component
 const SidebarHeader = memo(({ onClose }: { onClose: () => void }) => (
   <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
-    <div className="flex items-center">
-      <TrendingUp className="h-6 w-6 text-blue-600" />
-      <span className="ml-2 text-lg font-semibold text-gray-900 dark:text-white">
-        Trading Journal
+    <div className="flex items-center gap-2">
+      <Image 
+        src="/Forex Journal Logo.png" 
+        alt="Forex Journal Logo" 
+        width={32} 
+        height={32}
+        className="h-8 w-8 object-contain"
+        priority
+      />
+      <span className="text-lg font-semibold text-gray-900 dark:text-white">
+        Forex Journal
       </span>
     </div>
     
