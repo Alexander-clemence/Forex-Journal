@@ -109,7 +109,7 @@ const mapPathToTour = (path?: string | null): TourName => {
 
 export function FeatureTour({ tour, stepsOverride }: FeatureTourProps) {
   const pathname = usePathname();
-  const resolvedTour = tour ?? mapPathToTour(pathname);
+  const resolvedTour: TourKey = tour ?? mapPathToTour(pathname);
   const { isOpen, hasSeen, step, next, previous, close, open, setSteps, reset } = useTourStore();
   const [highlightRect, setHighlightRect] = useState<Rect | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
