@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTrades } from '@/lib/hooks/useTrades';
+import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
 import { Plus, Search, Filter, Download, Upload, BookmarkPlus, Bookmark, Trash2, X } from 'lucide-react';
 import Link from 'next/link';
 import { TradeFilters as TradeFilterType } from '@/lib/types/trades';
@@ -86,6 +87,7 @@ const SORT_OPTIONS = [
 export default function TradesPage() {
   const router = useRouter();
   const { trades, loading, stats } = useTrades();
+  const { currentBalance, baseBalance } = useSimpleBalance();
   const [isSavePresetOpen, setIsSavePresetOpen] = useState(false);
   const [presetName, setPresetName] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -467,7 +469,7 @@ export default function TradesPage() {
         />
         <Card>
           <CardContent className="space-y-4 p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center" id="filters-bar">
               <div className="flex-1">
                 <Label htmlFor="trade-search" className="sr-only">
                   Search trades
@@ -490,7 +492,7 @@ export default function TradesPage() {
                   {showFilters ? 'Hide filters' : 'Show filters'}
                 </Button>
                 <Select value={`${sortBy}-${sortOrder}`} onValueChange={handleSortChange}>
-                  <SelectTrigger className="w-[190px]">
+                  <SelectTrigger className="w-[190px]" id="sort-dropdown">
                     <SelectValue placeholder="Sort trades" />
                   </SelectTrigger>
                   <SelectContent>
@@ -642,7 +644,12 @@ export default function TradesPage() {
           <>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {visibleTrades.map((trade) => (
-                <TradeCard key={trade.id} trade={trade} onTradeDeleted={handleTradeDeleted} />
+                <TradeCard 
+                  key={trade.id} 
+                  trade={trade} 
+                  onTradeDeleted={handleTradeDeleted}
+                  accountBalance={baseBalance > 0 ? baseBalance : currentBalance > 0 ? currentBalance : undefined}
+                />
               ))}
             </div>
 

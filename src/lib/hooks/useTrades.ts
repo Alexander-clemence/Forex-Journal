@@ -146,7 +146,9 @@ export function useTrades() {
       avgLoss, // Returns positive number (e.g., 45.50)
       bestTrade, // Returns 0 if no winning trades
       worstTrade, // Returns 0 if no losing trades, otherwise negative number
-      todayPnL
+      todayPnL,
+      winCount: winningTrades.length,
+      lossCount: losingTrades.length
     };
   };
 

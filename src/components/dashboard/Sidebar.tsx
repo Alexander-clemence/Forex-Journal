@@ -32,6 +32,16 @@ interface NavigationItem {
   permission?: string;
 }
 
+const navIdMap: Record<string, string> = {
+  '/dashboard': 'sidebar-dashboard',
+  '/dashboard/trades': 'sidebar-all-trades',
+  '/dashboard/trades/new': 'sidebar-add-trade',
+  '/dashboard/analytics': 'sidebar-analytics',
+  '/dashboard/balance': 'sidebar-account-balance',
+  '/dashboard/settings': 'sidebar-settings',
+  '/dashboard/export-data': 'sidebar-export',
+};
+
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'All Trades', href: '/dashboard/trades', icon: DollarSign },
@@ -140,6 +150,7 @@ const NavItem = memo(({
           : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
         isAdminOnly && 'border-l-2 border-blue-400'
       )}
+      id={navIdMap[item.href]}
     >
       <item.icon
         className={cn('mr-3 h-5 w-5 flex-shrink-0', iconClass)}

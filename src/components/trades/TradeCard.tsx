@@ -35,6 +35,7 @@ import { useShallow } from 'zustand/react/shallow';
 interface TradeCardProps {
   trade: Trade;
   onTradeDeleted?: () => void;
+  accountBalance?: number; // Base account balance for percentage calculation
 }
 
 type MoodType = 'confident' | 'analytical' | 'cautious' | 'frustrated' | 'disappointed' | 'excited' | 'focused' | 'nervous' | 'optimistic' | 'neutral' | 'anxious';
@@ -70,7 +71,7 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2
 });
 
-export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
+export function TradeCard({ trade, onTradeDeleted, accountBalance }: TradeCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentTrade, setCurrentTrade] = useState<Trade>(trade);
@@ -149,7 +150,16 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
     }
 
     const isProfit = currentTrade.profit_loss > 0;
-    const percentage = ((currentTrade.profit_loss / (currentTrade.entry_price * currentTrade.quantity)) * 100);
+    
+    // Calculate percentage based on account balance if available, otherwise fall back to trade value
+    let percentage: number;
+    if (accountBalance && accountBalance > 0) {
+      // Percentage relative to account balance
+      percentage = (currentTrade.profit_loss / accountBalance) * 100;
+    } else {
+      // Fallback to original calculation based on trade entry value
+      percentage = ((currentTrade.profit_loss / (currentTrade.entry_price * currentTrade.quantity)) * 100);
+    }
 
     return {
       isOpen: false,
@@ -159,7 +169,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
       percentage: `${Math.abs(percentage).toFixed(2)}%`,
       showArrow: true
     };
-  }, [currentTrade.status, currentTrade.profit_loss, currentTrade.entry_price, currentTrade.quantity]);
+  }, [currentTrade.status, currentTrade.profit_loss, currentTrade.entry_price, currentTrade.quantity, accountBalance]);
 
   const duration = useMemo(() => {
     const loggedDate = new Date(currentTrade.created_at || currentTrade.entry_date);
@@ -209,7 +219,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
   }, []);
 
   return (
-    <Card className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
+    <Card className="trade-card relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
       <CardContent className="p-5">
         {/* Header Row */}
         <div className="flex items-start justify-between mb-4">
@@ -221,7 +231,7 @@ export function TradeCard({ trade, onTradeDeleted }: TradeCardProps) {
             </Badge>
           </div>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 trade-card-actions">
             <Button 
               variant="ghost" 
               size="icon"

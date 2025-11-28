@@ -480,11 +480,11 @@ export default function ExportDataComponent() {
         {success && <SuccessMessage message={success} onClose={clearSuccess} />}
 
         {/* Export Configuration */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6" id="export-options">
           <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Export Configuration</h2>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            <div>
+            <div id="export-date-range">
               <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                 <FileText className="h-4 w-4 inline mr-1" />
                 Report Type

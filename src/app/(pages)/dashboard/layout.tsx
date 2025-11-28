@@ -5,11 +5,11 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { ProtectedRoute } from '@/lib/hooks/useAuth';
 import { WhatsNewDialog } from '@/components/dashboard/WhatsNewDialog';
 import { ShortcutDialog } from '@/components/dashboard/ShortcutDialog';
-import { FeatureTour } from '@/components/dashboard/FeatureTour';
 import { SkipNavLink, SkipNavContent } from '@/components/ui/skip-nav';
 import { useShortcutStore } from '@/lib/stores/shortcutStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { GuidedTourDialog } from '@/components/dashboard/GuidedTourDialog';
 
 
 
@@ -71,7 +71,7 @@ export default function DashboardLayout({
           <Header/>
           <WhatsNewDialog />
           <ShortcutDialog />
-          <FeatureTour />
+          <GuidedTourDialog />
           
           {/* Page content */}
           <SkipNavContent id="dashboard-main">

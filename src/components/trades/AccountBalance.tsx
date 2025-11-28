@@ -48,7 +48,7 @@ const BalanceBreakdown = memo(({
   const PnLIcon = pnlDisplay.icon;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4" id="balance-breakdown-section">
       <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
         <span className="text-sm text-gray-500 block mb-1">Base Balance</span>
         <span className="text-xl font-semibold">
@@ -313,9 +313,9 @@ export default function SimpleBalanceManager() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="balance">Base Balance</Label>
+              <Label htmlFor="balance-input">Base Balance</Label>
               <Input
-                id="balance"
+                id="balance-input"
                 type="number"
                 step="0.01"
                 min="0"

@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface TradeTimelineProps {
   trades: Trade[];
+  maxItems?: number;
 }
 
 const formatCurrency = (value: number) =>
@@ -17,18 +18,19 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-export const TradeTimeline = memo(function TradeTimeline({ trades }: TradeTimelineProps) {
+export const TradeTimeline = memo(function TradeTimeline({ trades, maxItems }: TradeTimelineProps) {
   const timelineItems = useMemo(() => {
     return trades
-      .filter((trade) => trade.entry_date)
+      .filter((trade) => trade.entry_date || trade.created_at)
       .sort(
         (a, b) =>
           new Date(b.entry_date || b.created_at || '').getTime() -
           new Date(a.entry_date || a.created_at || '').getTime()
       )
       .map((trade) => {
-        const dateLabel = trade.entry_date
-          ? new Date(trade.entry_date).toLocaleDateString(undefined, {
+        const referenceDate = trade.entry_date || trade.created_at;
+        const dateLabel = referenceDate
+          ? new Date(referenceDate).toLocaleDateString(undefined, {
               month: 'short',
               day: 'numeric',
             })
@@ -48,7 +50,16 @@ export const TradeTimeline = memo(function TradeTimeline({ trades }: TradeTimeli
       });
   }, [trades]);
 
-  if (timelineItems.length === 0) {
+  const visibleItems = useMemo(() => {
+    if (typeof maxItems === 'number' && maxItems > 0) {
+      return timelineItems.slice(0, maxItems);
+    }
+    return timelineItems;
+  }, [timelineItems, maxItems]);
+
+  const isLimited = typeof maxItems === 'number' && timelineItems.length > maxItems;
+
+  if (visibleItems.length === 0) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
@@ -60,7 +71,7 @@ export const TradeTimeline = memo(function TradeTimeline({ trades }: TradeTimeli
 
   return (
     <div className="space-y-4">
-      {timelineItems.map((item) => (
+      {visibleItems.map((item) => (
         <div key={item.id} className="flex gap-4">
           <div className="w-16 text-sm font-medium text-muted-foreground shrink-0 pt-1.5">
             {item.dateLabel}
@@ -95,6 +106,11 @@ export const TradeTimeline = memo(function TradeTimeline({ trades }: TradeTimeli
           </div>
         </div>
       ))}
+      {isLimited && (
+        <p className="text-xs text-muted-foreground">
+          Showing {visibleItems.length} of {timelineItems.length} entries.
+        </p>
+      )}
     </div>
   );
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +82,9 @@ export function TradingAnalytics() {
     setActiveTab: state.setActiveTab,
   })));
 
+  const [timelineRange, setTimelineRange] = useState<'all' | '1m' | '3m' | '6m' | '12m'>('3m');
+  const [timelineTradeFilter, setTimelineTradeFilter] = useState<'all' | 'wins' | 'losses' | 'open' | 'closed'>('all');
+
   const filteredTrades = useMemo(() => {
     if (!trades.length) return [];
 
@@ -107,6 +110,52 @@ export function TradingAnalytics() {
 
     return trades.filter(trade => new Date(trade.entry_date) >= cutoffDate);
   }, [trades, timeRange]);
+
+  const timelineFilteredTrades = useMemo(() => {
+    let result = [...filteredTrades];
+
+    if (timelineRange !== 'all') {
+      const cutoff = new Date();
+      switch (timelineRange) {
+        case '1m':
+          cutoff.setMonth(cutoff.getMonth() - 1);
+          break;
+        case '3m':
+          cutoff.setMonth(cutoff.getMonth() - 3);
+          break;
+        case '6m':
+          cutoff.setMonth(cutoff.getMonth() - 6);
+          break;
+        case '12m':
+          cutoff.setFullYear(cutoff.getFullYear() - 1);
+          break;
+      }
+      result = result.filter((trade) => {
+        const referenceDate = trade.entry_date || trade.created_at;
+        if (!referenceDate) return false;
+        return new Date(referenceDate) >= cutoff;
+      });
+    }
+
+    if (timelineTradeFilter !== 'all') {
+      result = result.filter((trade) => {
+        switch (timelineTradeFilter) {
+          case 'wins':
+            return trade.status === 'closed' && (trade.profit_loss || 0) > 0;
+          case 'losses':
+            return trade.status === 'closed' && (trade.profit_loss || 0) < 0;
+          case 'open':
+            return trade.status === 'open';
+          case 'closed':
+            return trade.status === 'closed';
+          default:
+            return true;
+        }
+      });
+    }
+
+    return result;
+  }, [filteredTrades, timelineRange, timelineTradeFilter]);
 
   // Performance Analytics
   const performanceData = useMemo(() => {
@@ -217,10 +266,13 @@ export function TradingAnalytics() {
     const tradesWithStrategy = filteredTrades.filter(t => t.strategy);
 
     const strategyAnalysis = tradesWithStrategy.reduce((acc, trade) => {
-      const strategy = trade.strategy!;
-      if (!acc[strategy]) {
-        acc[strategy] = {
-          strategy,
+      const originalStrategy = trade.strategy!;
+      // Normalize strategy name to lowercase for case-insensitive grouping
+      const normalizedStrategy = originalStrategy.toLowerCase().trim();
+      
+      if (!acc[normalizedStrategy]) {
+        acc[normalizedStrategy] = {
+          strategy: originalStrategy, // Keep original capitalization for display
           count: 0,
           totalPnL: 0,
           avgPnL: 0,
@@ -228,14 +280,19 @@ export function TradingAnalytics() {
           wins: 0,
           losses: 0
         };
+      } else {
+        // If we encounter a different capitalization, use the most common one
+        // For now, keep the first one encountered, but you could track frequency
+        // This ensures consistent display while grouping correctly
       }
-      acc[strategy].count += 1;
+      
+      acc[normalizedStrategy].count += 1;
       if (trade.status === 'closed' && trade.profit_loss !== null) {
-        acc[strategy].totalPnL += trade.profit_loss;
+        acc[normalizedStrategy].totalPnL += trade.profit_loss;
         if (trade.profit_loss > 0) {
-          acc[strategy].wins += 1;
+          acc[normalizedStrategy].wins += 1;
         } else {
-          acc[strategy].losses += 1;
+          acc[normalizedStrategy].losses += 1;
         }
       }
       return acc;
@@ -428,7 +485,7 @@ export function TradingAnalytics() {
         {/* Performance Analytics */}
         <TabsContent value="performance" className="space-y-6">
           {comparisonStats.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="comparison-cards">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="comparison-cards" id="analytics-metrics">
               {comparisonStats.map((stat) => {
                 const delta = stat.delta;
                 const isPositive = delta >= 0;
@@ -453,7 +510,7 @@ export function TradingAnalytics() {
               })}
             </div>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="analytics-charts">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -512,28 +569,41 @@ export function TradingAnalytics() {
               <CardTitle>Performance Rating Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ratingData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="rating" />
-                  <YAxis tickFormatter={formatCurrency} />
-                  <Tooltip
-                    formatter={(value, name) => [
-                      name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
-                      name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
-                    ]}
-                  />
-                  <Legend />
-                  <Bar dataKey="avgPnL" fill="#3B82F6" name="Avg P&L" />
-                  <Bar dataKey="winRate" fill="#10B981" name="Win Rate %" />
-                </BarChart>
-              </ResponsiveContainer>
+              {ratingData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[300px] text-gray-500 dark:text-gray-400">
+                  <Star className="h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No Performance Ratings</p>
+                  <p className="text-sm text-center">
+                    Rate your trades to see performance analysis by rating.
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={ratingData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="rating" 
+                      tickFormatter={(value) => `${value}⭐`}
+                    />
+                    <YAxis tickFormatter={formatCurrency} />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
+                        name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
+                      ]}
+                    />
+                    <Legend />
+                    <Bar dataKey="avgPnL" fill="#3B82F6" name="Avg P&L" />
+                    <Bar dataKey="winRate" fill="#10B981" name="Win Rate %" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Psychology Analytics */}
-        <TabsContent value="psychology" className="space-y-6">
+        <TabsContent value="psychology" className="space-y-6" id="analytics-psychology">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -620,7 +690,7 @@ export function TradingAnalytics() {
         </TabsContent>
 
         {/* Strategy Analytics */}
-        <TabsContent value="strategy" className="space-y-6">
+        <TabsContent value="strategy" className="space-y-6" id="analytics-strategy-symbol">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -629,21 +699,63 @@ export function TradingAnalytics() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={strategyData} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" tickFormatter={formatCurrency} />
-                  <YAxis type="category" dataKey="strategy" width={100} />
-                  <Tooltip
-                    formatter={(value, name) => [
-                      name === 'totalPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
-                      name === 'totalPnL' ? 'Total P&L' : 'Win Rate'
-                    ]}
-                  />
-                  <Legend />
-                  <Bar dataKey="totalPnL" fill="#3B82F6" name="Total P&L" />
-                </BarChart>
-              </ResponsiveContainer>
+              {strategyData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[400px] text-gray-500 dark:text-gray-400">
+                  <BarChart3 className="h-12 w-12 mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No Strategy Data</p>
+                  <p className="text-sm text-center">
+                    Add strategies to your trades to see performance analysis.
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={strategyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="strategy" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                    />
+                    <YAxis 
+                      yAxisId="left"
+                      tickFormatter={formatCurrency}
+                      label={{ value: 'Total P&L ($)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      tickFormatter={(value) => `${value.toFixed(0)}%`}
+                      label={{ value: 'Win Rate (%)', angle: 90, position: 'insideRight' }}
+                    />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        name === 'totalPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
+                        name === 'totalPnL' ? 'Total P&L' : 'Win Rate'
+                      ]}
+                    />
+                    <Legend />
+                    <Bar 
+                      yAxisId="left"
+                      dataKey="totalPnL" 
+                      fill="#3B82F6" 
+                      name="Total P&L"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="winRate" 
+                      stroke="#10B981" 
+                      strokeWidth={3}
+                      dot={{ fill: '#10B981', r: 5 }}
+                      activeDot={{ r: 7 }}
+                      name="Win Rate"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
@@ -766,19 +878,47 @@ export function TradingAnalytics() {
         </TabsContent>
 
         {/* Timeline */}
-        <TabsContent value="timeline" className="space-y-6">
+        <TabsContent value="timeline" className="space-y-6" id="timeline-section">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Trade Timeline
-              </CardTitle>
-              <CardDescription>
-                Chronological view of trades for the selected timeframe—helpful for spotting streaks and context.
-              </CardDescription>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Trade Timeline
+                </CardTitle>
+                <CardDescription>
+                  Chronological view of trades—filter by timeframe and trade outcome to spot streaks faster.
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Select value={timelineRange} onValueChange={(value) => setTimelineRange(value as 'all' | '1m' | '3m' | '6m' | '12m')}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Timeline range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1m">Last 30 days</SelectItem>
+                    <SelectItem value="3m">Last 3 months</SelectItem>
+                    <SelectItem value="6m">Last 6 months</SelectItem>
+                    <SelectItem value="12m">Last 12 months</SelectItem>
+                    <SelectItem value="all">All time</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={timelineTradeFilter} onValueChange={(value) => setTimelineTradeFilter(value as 'all' | 'wins' | 'losses' | 'open' | 'closed')}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Trade filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All trades</SelectItem>
+                    <SelectItem value="wins">Winning trades</SelectItem>
+                    <SelectItem value="losses">Losing trades</SelectItem>
+                    <SelectItem value="open">Open trades</SelectItem>
+                    <SelectItem value="closed">Closed trades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              <TradeTimeline trades={filteredTrades} />
+              <TradeTimeline trades={timelineFilteredTrades} />
             </CardContent>
           </Card>
         </TabsContent>

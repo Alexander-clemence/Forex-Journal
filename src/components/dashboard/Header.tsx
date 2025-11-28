@@ -15,20 +15,12 @@ import { User, Settings, LogOut, Menu, Sparkles, MessageSquare } from 'lucide-re
 import Link from 'next/link';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { useUIStore } from '@/lib/stores/uiStore';
-import { useTourStore, type TourKey } from '@/lib/stores/tourStore';
-import { usePathname } from 'next/navigation';
 import { TourStatusDialog } from './TourStatusDialog';
+import { useGuideDialogStore } from '@/lib/stores/guideDialogStore';
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
 }
-
-const mapPathToTour = (path?: string | null): TourKey => {
-  if (!path) return 'dashboard';
-  if (path.startsWith('/dashboard/trades')) return 'trades';
-  if (path.startsWith('/dashboard/analytics')) return 'analytics';
-  return 'dashboard';
-};
 
 
 // Memoized Mobile Menu Button
@@ -75,8 +67,7 @@ UserInfo.displayName = 'UserInfo';
 export default function Header({ onMobileMenuToggle }: HeaderProps) {
   const { user, signOut } = useAuth();
   const toggleMobileMenu = useUIStore((state) => state.toggleMobileMenu);
-  const { open: openTour } = useTourStore();
-  const pathname = usePathname();
+  const { open: openGuideDialog } = useGuideDialogStore();
   const [isTourStatusOpen, setTourStatusOpen] = useState(false);
 
   // Memoize user data to prevent unnecessary re-renders
@@ -102,9 +93,8 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
   }, [toggleMobileMenu, onMobileMenuToggle]);
 
   const handleGuideTour = useCallback(() => {
-    const tourKey = mapPathToTour(pathname);
-    openTour(tourKey);
-  }, [openTour, pathname]);
+    openGuideDialog();
+  }, [openGuideDialog]);
 
   return (
     <>
@@ -117,7 +107,7 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
           </div>
 
           {/* Right side - Theme toggle and user menu */}
-          <div className="flex items-center space-x-4" data-tour="shortcuts-hint">
+          <div className="flex items-center space-x-4" data-tour="shortcuts-hint" id="keyboard-shortcuts-help">
             <Button 
               variant="outline" 
               size="sm"

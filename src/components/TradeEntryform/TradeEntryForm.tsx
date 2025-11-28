@@ -101,7 +101,7 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
                 <TabsTrigger value="journal">Journal</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="trade" className="space-y-4 mt-4">
+              <TabsContent value="trade" className="space-y-4 mt-4" id="trade-form-required">
                 {/* Basic Trade Info */}
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   <div className="space-y-2">
@@ -326,7 +326,7 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
                 </div>
               </TabsContent>
 
-              <TabsContent value="journal" className="space-y-4 mt-4">
+              <TabsContent value="journal" className="space-y-4 mt-4" id="trade-form-optional">
                 {/* Psychology */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -398,6 +398,14 @@ export function SimpleTradeForm({ onSubmit, onCancel, initialData, isLoading = f
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? 'Saving...' : (initialData ? 'Update' : 'Save Trade')}
               </Button>
+            </div>
+            <div id="trade-form-tips" className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              <p className="font-semibold text-slate-800 dark:text-slate-100">Tips for cleaner records</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Log open trades without exit details, then update status and exit price once you close them.</li>
+                <li>Use strategy, tags, and sentiment the same way every time so filters and analytics stay meaningful.</li>
+                <li>Include a quick note on what you learned—future you will thank you during weekly reviews.</li>
+              </ul>
             </div>
           </form>
         </CardContent>

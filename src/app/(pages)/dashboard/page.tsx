@@ -7,7 +7,7 @@ import { PnLChart } from '@/components/analytics/PnLChart';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { StatsCards } from '@/components/dashboard/StatsCard';
 import { SectionHeading } from '@/components/dashboard/SectionHeading';
-import { RecentTradesCard } from '@/components/dashboard/RecentTradesard';
+import { TradeTimeline } from '@/components/analytics/TradeTimeline';
 import { MarketStatus } from '@/components/dashboard/MarketStatus';
 import { useTrades } from '@/lib/hooks/useTrades';
 import { useSimpleBalance } from '@/lib/hooks/useAccountBalance';
@@ -266,8 +266,8 @@ export default function DashboardPage() {
   const [newBalance, setNewBalance] = useState('');
   const [balanceUpdating, setBalanceUpdating] = useState(false);
 
-  // Memoize recent trades to prevent recalculation on every render
-  const recentTrades = useMemo(() => trades.slice(0, 5), [trades]);
+  // Memoize recent trades for timeline (show last 10 trades)
+  const recentTrades = useMemo(() => trades.slice(0, 10), [trades]);
 
   // Memoize callback functions to maintain reference stability
   const handleUpdateBalance = useCallback(async () => {
@@ -313,7 +313,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Header with Subtle Balance */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between fxj-welcome" id="dashboard-header">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Welcome back!
@@ -332,12 +332,13 @@ export default function DashboardPage() {
           <Button 
             variant="outline"
             onClick={startBalanceEdit}
+            id="edit-balance-button"
           >
             Edit Balance
           </Button>
 
           <Link href="/dashboard/trades/new">
-            <Button>
+            <Button id="add-trade-button">
               <Plus className="h-4 w-4 mr-2" />
               Add Trade
             </Button>
@@ -365,7 +366,7 @@ export default function DashboardPage() {
       )}
 
       {/* Stats Cards */}
-      <section aria-labelledby="stats-heading" className="space-y-4">
+      <section aria-labelledby="stats-heading" className="space-y-4" id="dashboard-stats-cards">
         <SectionHeading
           id="stats-heading"
           title="Performance snapshot"
@@ -402,13 +403,30 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <div className="pt-8 border-t space-y-2">
-            <RecentTradesCard trades={recentTrades} />
+          <div className="pt-8 border-t">
+            <Card>
+              <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle>Recent Trades Timeline</CardTitle>
+                  <CardDescription>
+                    Chronological view of your latest trading activity
+                  </CardDescription>
+                </div>
+                <Link href="/dashboard/analytics#timeline-section">
+                  <Button variant="outline" size="sm">
+                    View full timeline
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <TradeTimeline trades={recentTrades} maxItems={6} />
+              </CardContent>
+            </Card>
           </div>
         </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6" data-tour="quick-actions">
+          <div className="space-y-6" data-tour="quick-actions" id="quick-actions-panel">
             <QuickActions />
             
             <TodaySummaryCard 
@@ -424,6 +442,40 @@ export default function DashboardPage() {
               
             <MarketStatus />
           </div>
+        </div>
+      </section>
+
+      {/* Best Practices */}
+      <section className="space-y-4">
+        <SectionHeading
+          id="best-practices-heading"
+          title="Best practices"
+          description="Consistency compounds. Keep these habits close."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            {
+              title: 'Stay consistent',
+              description: 'Use the same strategy names, tag sets, and journaling format so analytics stay clean and comparable.',
+            },
+            {
+              title: 'Review psychology',
+              description: 'Log your mood and sentiment for every trade to spot the emotional patterns behind hot streaks and drawdowns.',
+            },
+            {
+              title: 'Weekly retro',
+              description: 'Set aside 15 minutes each week to review winners, losses, and notes before planning the next sessions.',
+            },
+          ].map((card, index) => (
+            <div
+              key={card.title}
+              className="best-practices-card rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm"
+            >
+              <p className="text-xs uppercase tracking-wide text-slate-500">Tip {index + 1}</p>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mt-1">{card.title}</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{card.description}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>
