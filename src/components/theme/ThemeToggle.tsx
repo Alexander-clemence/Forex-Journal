@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useCallback, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -11,12 +11,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Moon, Sun, Monitor, Check } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
+import { useSettings } from '@/lib/hooks/useSettings';
+import { toast } from 'sonner';
 
 const THEMES = [
   { value: 'light' as const, label: 'Light', icon: Sun },
   { value: 'dark' as const, label: 'Dark', icon: Moon },
   { value: 'system' as const, label: 'System', icon: Monitor }
 ] as const;
+type ThemeChoice = (typeof THEMES)[number]['value'];
 
 const ThemeMenuItem = memo(({ 
   value, 
@@ -47,6 +50,35 @@ ThemeMenuItem.displayName = 'ThemeMenuItem';
 
 export const ThemeToggle = memo(function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { settings, saveSettings } = useSettings();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleThemeChange = useCallback(
+    (value: ThemeChoice) => {
+      if (isSaving) return;
+      setTheme(value);
+
+      if (!settings) {
+        return;
+      }
+
+      setIsSaving(true);
+      const maybePromise = saveSettings({ theme: value });
+
+      if (!maybePromise || typeof maybePromise.finally !== 'function') {
+        setIsSaving(false);
+        return;
+      }
+
+      maybePromise
+        .catch((err: Error) => {
+          console.error('Failed to update theme preference', err);
+          toast.error('Could not update theme preference. Please try again.');
+        })
+        .finally(() => setIsSaving(false));
+    },
+    [isSaving, saveSettings, setTheme, settings]
+  );
 
   const CurrentIcon = useMemo(() => {
     const currentTheme = THEMES.find(t => t.value === theme);
@@ -69,7 +101,7 @@ export const ThemeToggle = memo(function ThemeToggle() {
             label={label}
             icon={icon}
             isActive={theme === value}
-            onClick={() => setTheme(value)}
+            onClick={() => handleThemeChange(value)}
           />
         ))}
       </DropdownMenuContent>
