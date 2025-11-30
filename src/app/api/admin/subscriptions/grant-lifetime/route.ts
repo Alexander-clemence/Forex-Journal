@@ -40,7 +40,7 @@ async function checkAdminPermission(userId: string) {
     return { authorized: false, error: 'Error fetching profile' };
   }
 
-  if (profile.role !== 'admin') {
+  if ((profile as any).role !== 'admin') {
     return { authorized: false, error: 'Admin access required' };
   }
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           starts_at: startsAt.toISOString(),
           ends_at: null, // Lifetime has no end date
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', existingSubscription.id);
 
       if (updateError) {
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: null, // Lifetime has no end date
-        });
+        } as any);
 
       if (insertError) {
         return NextResponse.json(

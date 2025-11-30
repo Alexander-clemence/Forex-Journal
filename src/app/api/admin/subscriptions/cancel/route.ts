@@ -40,7 +40,7 @@ async function checkAdminPermission(userId: string) {
     return { authorized: false, error: 'Error fetching profile' };
   }
 
-  if (profile.role !== 'admin') {
+  if ((profile as any).role !== 'admin') {
     return { authorized: false, error: 'Admin access required' };
   }
 
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       .update({
         status: 'cancelled',
         updated_at: new Date().toISOString(),
-      })
+      } as any)
       .eq('user_id', userId)
       .eq('status', 'active');
 

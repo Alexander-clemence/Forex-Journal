@@ -32,7 +32,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
-type UserWithSubscription = Database['public']['Views']['profile_with_subscription']['Row'] & { email?: string };
+type UserWithSubscription = Database['public']['Views']['profile_with_subscription']['Row'] & { 
+  email?: string;
+  role?: string;
+  display_name?: string | null;
+  timezone?: string | null;
+  default_currency?: string | null;
+};
 
 const roleOptions = [
   { value: 'user', label: 'User', description: 'Basic trading functionality', icon: UserCheck, color: 'text-gray-600', bgColor: 'bg-gray-100' },

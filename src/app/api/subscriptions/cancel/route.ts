@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       .update({
         status: 'canceled',
         updated_at: new Date().toISOString(),
-      })
+      } as any)
       .eq('id', subscription.id);
 
     if (updateError) {

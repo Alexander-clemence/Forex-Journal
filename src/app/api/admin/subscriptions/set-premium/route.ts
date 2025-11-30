@@ -40,7 +40,7 @@ async function checkAdminPermission(userId: string) {
     return { authorized: false, error: 'Error fetching profile' };
   }
 
-  if (profile.role !== 'admin') {
+  if ((profile as any).role !== 'admin') {
     return { authorized: false, error: 'Admin access required' };
   }
 
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', existingSubscription.id);
 
       if (updateError) {
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
-        });
+        } as any);
 
       if (insertError) {
         return NextResponse.json(
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Subscription set to ${plan.name} successfully`,
+      message: `Subscription set to ${(plan as any).name || planCode} successfully`,
     });
   } catch (error) {
     console.error('Error setting subscription:', error);

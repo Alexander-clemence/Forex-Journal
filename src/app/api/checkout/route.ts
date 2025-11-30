@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
           plan_code: planCode,
           dummy_payment: true,
         },
-      });
+      } as any);
 
     if (transactionError) {
       console.error('Error creating payment transaction:', transactionError);
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', existingSubscription.id);
 
       if (updateError) {
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
-        });
+        } as any);
 
       if (insertError) {
         console.error('Error creating subscription:', insertError);
