@@ -76,7 +76,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Fetch profile with role
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('id', userId)
         .single();
 
@@ -85,16 +85,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return;
       }
 
-      const typedProfile = profile as Pick<Profile, 'role'> | null;
+      const typedProfile = profile as (Profile & { role?: string }) | null;
 
       if (typedProfile?.role) {
         setRole(typedProfile.role);
 
         // Fetch permissions for this role
+        const role = typedProfile.role;
         const { data: rolePermissions, error: permError } = await supabase
           .from('role_permissions')
           .select('permission')
-          .eq('role', typedProfile.role);
+          .eq('role', role);
 
         if (permError) {
           console.error('Error fetching permissions:', permError);
