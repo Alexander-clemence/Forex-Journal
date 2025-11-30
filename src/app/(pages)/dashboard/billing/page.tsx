@@ -53,6 +53,11 @@ export default function BillingHistoryPage() {
   }, [user?.id]);
 
   const loadTransactions = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -64,7 +69,7 @@ export default function BillingHistoryPage() {
             code
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
