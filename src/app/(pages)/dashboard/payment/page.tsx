@@ -74,6 +74,13 @@ export default function PaymentPage() {
   }, [planCode, user, router]);
 
   const loadPlan = async () => {
+    if (!planCode) {
+      toast.error('Plan not specified');
+      router.push('/dashboard/subscription');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
