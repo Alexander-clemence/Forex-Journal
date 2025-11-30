@@ -40,7 +40,8 @@ export default function PricingPage() {
       if (error) throw error;
 
       // Filter out trial (auto-applied, not shown) and lifetime (admin-only)
-      const visiblePlans = ((data || []) as any[]).filter(
+      const plansData = (data || []) as any[];
+      const visiblePlans = plansData.filter(
         (p: any) => p && p.code && p.code !== 'lifetime' && p.code !== 'trial' && p.code !== 'trial_30d'
       );
       setPlans(visiblePlans);
