@@ -47,9 +47,9 @@ export class TradeService {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('trades')
-      .update(updatedTrade as any)
+      .update(updatedTrade)
       .eq('id', id)
       .select()
       .single();

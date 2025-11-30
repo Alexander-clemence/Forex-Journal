@@ -78,12 +78,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Cancel subscription
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await (supabaseAdmin as any)
       .from('subscriptions')
       .update({
         status: 'cancelled',
         updated_at: new Date().toISOString(),
-      } as any)
+      })
       .eq('user_id', userId)
       .eq('status', 'active');
 

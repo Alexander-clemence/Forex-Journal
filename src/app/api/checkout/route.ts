@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     if (existingSubscription) {
       // Update existing subscription
       const existingSub = existingSubscription as any;
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await (supabaseAdmin as any)
         .from('subscriptions')
         .update({
           plan_id: planData.id,
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
           updated_at: new Date().toISOString(),
-        } as any)
+        })
         .eq('id', existingSub.id);
 
       if (updateError) {

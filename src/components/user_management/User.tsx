@@ -503,7 +503,7 @@ export default function UserManagement() {
               </TableHeader>
               <TableBody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredUsers.map((user) => {
-                  const roleConfig = getRoleConfig(user.role);
+                  const roleConfig = getRoleConfig(user.role || null);
                   const isEditing = editingUser === user.id;
                   
                   return (
