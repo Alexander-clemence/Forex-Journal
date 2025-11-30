@@ -74,9 +74,9 @@ export function ManageSubscription({ showUpgradeOptions: showUpgradeOptionsProp 
 
       if (error) throw error;
 
-      const visiblePlans = (data || []).filter(
-        (p) => p && 'code' in p && p.code !== 'lifetime' && p.code !== 'trial' && p.code !== 'trial_30d'
-      ) as any[];
+      const visiblePlans = ((data || []) as any[]).filter(
+        (p: any) => p && p.code && p.code !== 'lifetime' && p.code !== 'trial' && p.code !== 'trial_30d'
+      );
       setPlans(visiblePlans);
     } catch (error) {
       console.error('Error loading plans:', error);

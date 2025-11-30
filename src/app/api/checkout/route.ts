@@ -122,8 +122,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const planData = plan as any;
+
     // Process payment
-    const paymentResult = await processDummyPayment(userId, plan, provider);
+    const paymentResult = await processDummyPayment(userId, planData, provider);
 
     if (!paymentResult.success) {
       return NextResponse.json(
@@ -140,9 +142,9 @@ export async function POST(request: NextRequest) {
       .from('payment_transactions')
       .insert({
         user_id: userId,
-        plan_id: plan.id,
-        amount: plan.price,
-        currency: plan.currency,
+        plan_id: planData.id,
+        amount: planData.price,
+        currency: planData.currency,
         provider: provider,
         status: 'completed',
         transaction_id: paymentResult.transactionId || null,
@@ -167,16 +169,17 @@ export async function POST(request: NextRequest) {
 
     if (existingSubscription) {
       // Update existing subscription
+      const existingSub = existingSubscription as any;
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
-          plan_id: plan.id,
+          plan_id: planData.id,
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
           updated_at: new Date().toISOString(),
         } as any)
-        .eq('id', existingSubscription.id);
+        .eq('id', existingSub.id);
 
       if (updateError) {
         console.error('Error updating subscription:', updateError);
@@ -187,15 +190,17 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Create new subscription
-      const { error: insertError } = await supabaseAdmin
+      const { data: newSubscription, error: insertError } = await supabaseAdmin
         .from('subscriptions')
         .insert({
           user_id: userId,
-          plan_id: plan.id,
+          plan_id: planData.id,
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
-        } as any);
+        } as any)
+        .select('id')
+        .single();
 
       if (insertError) {
         console.error('Error creating subscription:', insertError);

@@ -69,13 +69,14 @@ export async function POST(request: NextRequest) {
 
     // Cancel subscription (set status to canceled, but keep ends_at as is)
     // User will retain access until the end of the billing period
+    const subData = subscription as any;
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'canceled',
         updated_at: new Date().toISOString(),
       } as any)
-      .eq('id', subscription.id);
+      .eq('id', subData.id);
 
     if (updateError) {
       console.error('Error canceling subscription:', updateError);

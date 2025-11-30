@@ -115,17 +115,19 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .maybeSingle();
 
+    const planData = plan as any;
     if (existingSubscription) {
+      const existingSub = existingSubscription as any;
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
-          plan_id: plan.id,
+          plan_id: planData.id,
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
           updated_at: new Date().toISOString(),
         } as any)
-        .eq('id', existingSubscription.id);
+        .eq('id', existingSub.id);
 
       if (updateError) {
         return NextResponse.json(
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
         .from('subscriptions')
         .insert({
           user_id: userId,
-          plan_id: plan.id,
+          plan_id: planData.id,
           status: 'active',
           starts_at: startsAt.toISOString(),
           ends_at: endsAt ? endsAt.toISOString() : null,
