@@ -11,11 +11,13 @@ import { Label } from '@/components/ui/label';
 import { TrendingUp, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { SkipNavLink, SkipNavContent } from '@/components/ui/skip-nav';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { ForexJournalIcon } from '@/components/ui/ForexJournalIcon';
 
 // Welcome Back Screen for Already Signed-in Users
-function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
+function WelcomeBackScreen({ displayName }: { displayName: string }) {
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 flex items-center justify-center z-50 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center z-50 overflow-hidden">
       {/* Animated background particles */}
       <div className="absolute inset-0">
         {[
@@ -37,7 +39,7 @@ function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
         ].map((particle, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-white/10 animate-float"
+            className="absolute rounded-full bg-foreground/10 animate-float"
             style={{
               left: `${particle.left}%`,
               top: `${particle.top}%`,
@@ -54,11 +56,11 @@ function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
         {/* Welcome Back Logo */}
         <div className="flex items-center justify-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-green-500/30 rounded-full blur-xl animate-pulse scale-150"></div>
-            <TrendingUp className="relative h-16 w-16 text-emerald-400 animate-bounce" style={{ animationDuration: '2s' }} />
+            <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse scale-150"></div>
+            <TrendingUp className="relative h-16 w-16 text-primary animate-bounce" style={{ animationDuration: '2s' }} />
           </div>
           <div className="ml-4">
-            <span className="text-4xl font-bold bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 bg-clip-text text-transparent animate-pulse">
+            <span className="text-4xl font-bold text-primary animate-pulse">
               Welcome Back!
             </span>
           </div>
@@ -67,10 +69,10 @@ function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
         {/* Success Checkmark Animation */}
         <div className="flex items-center justify-center">
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center animate-pulse">
-              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center animate-pulse">
+              <div className="w-12 h-12 rounded-full bg-card flex items-center justify-center">
                 <svg 
-                  className="w-8 h-8 text-emerald-500 animate-checkmark" 
+                  className="w-8 h-8 text-primary animate-checkmark" 
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -89,26 +91,31 @@ function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
 
         {/* Welcome Message */}
         <div className="space-y-3">
-          <p className="text-2xl font-bold text-white animate-fade-in">
+          <p className="text-2xl font-bold text-foreground animate-fade-in">
             Welcome back, trader!
           </p>
-          <p className="text-emerald-300 font-medium animate-pulse">
+          <p className="text-primary font-medium animate-pulse">
             🎯 Taking you to your dashboard...
           </p>
-          <p className="text-sm text-emerald-200 opacity-80">
-            {userEmail}
-          </p>
+          <div className="text-4xl font-black text-primary animate-fade-in" style={{ 
+            textShadow: '2px 2px 8px rgba(0, 0, 0, 0.3), 0 0 20px currentColor',
+            letterSpacing: '0.1em',
+            fontWeight: 900,
+            textTransform: 'uppercase'
+          }}>
+            {displayName}
+          </div>
         </div>
 
         {/* Progress Bar */}
         <div className="w-64 mx-auto">
-          <div className="bg-white/20 rounded-full h-2 overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-400 to-green-400 h-full rounded-full animate-progress"></div>
+          <div className="bg-foreground/20 rounded-full h-2 overflow-hidden">
+            <div className="bg-primary h-full rounded-full animate-progress"></div>
           </div>
         </div>
 
         {/* Trading Stats Preview */}
-        <div className="flex items-center justify-center space-x-8 text-sm text-emerald-200">
+          <div className="flex items-center justify-center space-x-8 text-sm text-muted-foreground">
           <span className="animate-bounce" style={{ animationDelay: '0s' }}>📈</span>
           <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>💰</span>
           <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>📊</span>
@@ -162,7 +169,7 @@ function WelcomeBackScreen({ userEmail }: { userEmail: string }) {
 // Creative Loading Animation Component for Sign In
 function LoginLoadingOverlay() {
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-violet-900 via-blue-900 to-cyan-900 flex items-center justify-center z-50 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center z-50 overflow-hidden">
       {/* Animated background particles */}
       <div className="absolute inset-0">
         {[
@@ -189,7 +196,7 @@ function LoginLoadingOverlay() {
         ].map((particle, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-white/10 animate-float"
+            className="absolute rounded-full bg-foreground/10 animate-float"
             style={{
               left: `${particle.left}%`,
               top: `${particle.top}%`,
@@ -222,12 +229,12 @@ function LoginLoadingOverlay() {
           />
           <defs>
             <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8"/>
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8"/>
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3"/>
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.3"/>
             </linearGradient>
             <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.6"/>
-              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.6"/>
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.2"/>
             </linearGradient>
           </defs>
         </svg>
@@ -237,11 +244,11 @@ function LoginLoadingOverlay() {
         {/* Floating Logo with Glow */}
         <div className="flex items-center justify-center">
           <div className="relative">
-            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-xl animate-pulse scale-150"></div>
-            <TrendingUp className="relative h-16 w-16 text-cyan-400 animate-bounce" style={{ animationDuration: '2s' }} />
+            <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse scale-150"></div>
+            <TrendingUp className="relative h-16 w-16 text-primary animate-bounce" style={{ animationDuration: '2s' }} />
           </div>
           <div className="ml-4">
-            <span className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent animate-pulse">
+            <span className="text-4xl font-bold text-primary animate-pulse">
               Trading Journal
             </span>
           </div>
@@ -251,29 +258,29 @@ function LoginLoadingOverlay() {
         <div className="flex items-center justify-center">
           <div className="relative">
             {/* Outer glow ring */}
-            <div className="absolute inset-0 w-24 h-24 rounded-full bg-gradient-to-r from-blue-500/30 to-cyan-500/30 blur-md animate-ping"></div>
+            <div className="absolute inset-0 w-24 h-24 rounded-full bg-primary/30 blur-md animate-ping"></div>
             
             {/* Outer spinning ring */}
-            <div className="relative w-20 h-20 rounded-full border-2 border-transparent bg-gradient-to-r from-blue-500 to-cyan-500 animate-spin" style={{ animationDuration: '3s' }}>
-              <div className="absolute inset-1 rounded-full bg-gradient-to-br from-violet-900 via-blue-900 to-cyan-900"></div>
+            <div className="relative w-20 h-20 rounded-full border-2 border-transparent bg-primary animate-spin" style={{ animationDuration: '3s' }}>
+              <div className="absolute inset-1 rounded-full bg-background"></div>
             </div>
             
             {/* Middle ring */}
-            <div className="absolute top-2 left-2 w-16 h-16 rounded-full border-2 border-transparent bg-gradient-to-r from-violet-500 to-blue-500 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}>
-              <div className="absolute inset-1 rounded-full bg-gradient-to-br from-violet-900 via-blue-900 to-cyan-900"></div>
+            <div className="absolute top-2 left-2 w-16 h-16 rounded-full border-2 border-transparent bg-primary/80 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}>
+              <div className="absolute inset-1 rounded-full bg-background"></div>
             </div>
             
             {/* Inner pulsing core */}
-            <div className="absolute top-6 left-6 w-8 h-8 rounded-full bg-gradient-to-r from-cyan-400 to-blue-400 animate-pulse shadow-lg shadow-cyan-500/50"></div>
+            <div className="absolute top-6 left-6 w-8 h-8 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50"></div>
             
             {/* Center dot */}
-            <div className="absolute top-8 left-8 w-4 h-4 rounded-full bg-white animate-ping"></div>
+            <div className="absolute top-8 left-8 w-4 h-4 rounded-full bg-foreground animate-ping"></div>
           </div>
         </div>
 
         {/* Animated Text */}
         <div className="space-y-3">
-          <p className="text-2xl font-bold text-white animate-fade-in">
+          <p className="text-2xl font-bold text-foreground animate-fade-in">
             <span className="inline-block animate-bounce" style={{ animationDelay: '0s' }}>S</span>
             <span className="inline-block animate-bounce" style={{ animationDelay: '0.1s' }}>i</span>
             <span className="inline-block animate-bounce" style={{ animationDelay: '0.2s' }}>g</span>
@@ -289,7 +296,7 @@ function LoginLoadingOverlay() {
             <span className="inline-block animate-bounce" style={{ animationDelay: '1.0s' }}>i</span>
             <span className="inline-block animate-bounce" style={{ animationDelay: '1.1s' }}>n</span>
           </p>
-          <p className="text-cyan-300 font-medium animate-pulse">
+          <p className="text-primary font-medium animate-pulse">
             🚀 Preparing your trading universe...
           </p>
         </div>
@@ -301,7 +308,7 @@ function LoginLoadingOverlay() {
             {[18, 25, 15, 22, 28, 12, 20].map((height, i) => (
               <div
                 key={i}
-                className="bg-gradient-to-t from-green-500 to-cyan-400 rounded-sm animate-pulse"
+                className="bg-primary rounded-sm animate-pulse"
                 style={{
                   width: '4px',
                   height: `${height}px`,
@@ -314,10 +321,10 @@ function LoginLoadingOverlay() {
           
           {/* Currency symbols */}
           <div className="flex items-center justify-center space-x-6 text-xl">
-            <span className="animate-bounce text-green-400" style={{ animationDelay: '0s' }}>$</span>
-            <span className="animate-bounce text-blue-400" style={{ animationDelay: '0.3s' }}>€</span>
-            <span className="animate-bounce text-yellow-400" style={{ animationDelay: '0.6s' }}>£</span>
-            <span className="animate-bounce text-purple-400" style={{ animationDelay: '0.9s' }}>¥</span>
+            <span className="animate-bounce text-primary" style={{ animationDelay: '0s' }}>$</span>
+            <span className="animate-bounce text-primary" style={{ animationDelay: '0.3s' }}>€</span>
+            <span className="animate-bounce text-primary" style={{ animationDelay: '0.6s' }}>£</span>
+            <span className="animate-bounce text-primary" style={{ animationDelay: '0.9s' }}>¥</span>
           </div>
         </div>
       </div>
@@ -409,10 +416,20 @@ export default function LoginPage() {
       }
       // Success case: useEffect will handle redirect
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
+
+  // Check for error query parameter (from email confirmation failure)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get('error');
+    if (errorParam === 'email_confirmation_failed') {
+      setError('Email confirmation failed. Please try again or contact support.');
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -424,16 +441,16 @@ export default function LoginPage() {
   // Show loading state with better UX for already signed-in users
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center mb-4">
-            <TrendingUp className="h-8 w-8 text-blue-600 animate-pulse" />
-            <span className="ml-2 text-2xl font-bold text-gray-900 dark:text-white">
+            <TrendingUp className="h-8 w-8 text-primary animate-pulse" />
+            <span className="ml-2 text-2xl font-bold text-foreground">
               Trading Journal
             </span>
           </div>
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-sm text-muted-foreground">
             Checking authentication status...
           </p>
         </div>
@@ -443,54 +460,87 @@ export default function LoginPage() {
 
   // Show welcome back screen for already signed-in users
   if (showWelcomeBack && user) {
-    return <WelcomeBackScreen userEmail={user.email || 'trader'} />;
+    const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'trader';
+    return <WelcomeBackScreen displayName={displayName} />;
   }
 
   return (
     <>
       {isSubmitting && <LoginLoadingOverlay />}
 
-      <div className="relative min-h-screen bg-slate-950 text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.25),transparent_45%)] opacity-70" />
+      <div className="relative min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--primary)/0.25),transparent_45%)] opacity-70" />
+        
+        {/* Navigation */}
+        <nav className="relative z-50 px-4 sm:px-6 py-6">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
+              <ForexJournalIcon size={48} className="h-12 w-12" />
+              <span className="text-xl font-bold tracking-tight text-foreground">
+                FX Journal
+              </span>
+            </Link>
+            
+            <div className="flex items-center gap-8">
+              <Link href="/" className="text-foreground hover:text-primary transition-colors font-medium">
+                Home
+              </Link>
+              <Link href="/features" className="text-foreground hover:text-primary transition-colors font-medium">
+                Features
+              </Link>
+              <Link href="/about" className="text-foreground hover:text-primary transition-colors font-medium">
+                About
+              </Link>
+              <Link href="/contact" className="text-foreground hover:text-primary transition-colors font-medium">
+                Contact
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+            </div>
+          </div>
+        </nav>
+        
         <SkipNavLink href="#login-form" className="m-4" />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-16 px-6 py-16 lg:grid-cols-2">
           <div className="space-y-6">
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-blue-300">FX Journal</p>
-              <h1 className="mt-3 text-4xl font-semibold leading-tight text-white">
+              <p className="text-sm uppercase tracking-[0.2em] text-primary">FX Journal</p>
+              <h1 className="mt-3 text-4xl font-semibold leading-tight text-foreground">
                 Own your process.<br />
                 Trade with clarity.
               </h1>
-              <p className="mt-4 text-base text-slate-300 max-w-xl">
+              <p className="mt-4 text-base text-muted-foreground max-w-xl">
                 We combine structured journaling, psychology tracking, and institutional-grade analytics so every trade
                 becomes a lesson—not a guess.
               </p>
             </div>
 
             <dl
-              className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+              className="space-y-4 rounded-2xl border border-border bg-card/50 p-6 backdrop-blur"
               data-tour="login-highlights"
             >
               {highlights.map((item) => (
                 <div key={item.title} className="flex gap-3">
-                  <ShieldCheck className="mt-1 h-5 w-5 text-blue-300" />
+                  <ShieldCheck className="mt-1 h-5 w-5 text-primary" />
                   <div>
-                    <dt className="font-medium text-white">{item.title}</dt>
-                    <dd className="text-sm text-slate-300">{item.description}</dd>
+                    <dt className="font-medium text-foreground">{item.title}</dt>
+                    <dd className="text-sm text-muted-foreground">{item.description}</dd>
                   </div>
                 </div>
               ))}
             </dl>
 
-            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <div>
-                <p className="font-semibold text-white">New here?</p>
+                <p className="font-semibold text-foreground">New here?</p>
                 <span>Save trades and revisit insights anytime.</span>
               </div>
               <div>
-                <p className="font-semibold text-white">Need help?</p>
-                <Link href="/support" className="text-blue-300 underline-offset-4 hover:underline">
+                <p className="font-semibold text-foreground">Need help?</p>
+                <Link href="/support" className="text-primary underline-offset-4 hover:underline">
                   Contact support
                 </Link>
               </div>
@@ -500,20 +550,20 @@ export default function LoginPage() {
           <SkipNavContent id="login-form">
             <div
               data-tour="login-form"
-              className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/80 p-6 shadow-2xl backdrop-blur"
+              className="w-full max-w-md rounded-2xl border border-border bg-card/80 p-6 shadow-2xl backdrop-blur"
             >
               <div className="mb-6 text-center">
-                <div className="flex items-center justify-center gap-3 text-white">
-                  <TrendingUp className="h-7 w-7 text-blue-400" />
+                <div className="flex items-center justify-center gap-3 text-foreground">
+                  <TrendingUp className="h-7 w-7 text-primary" />
                   <span className="text-2xl font-semibold">Sign in to FX Journal</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-400">Secure access to your trading workspace</p>
+                <p className="mt-2 text-sm text-muted-foreground">Secure access to your trading workspace</p>
               </div>
 
-              <Card className="bg-slate-950/50 border-white/5">
+              <Card className="bg-card/50 border-border">
                 <CardHeader>
-                  <CardTitle className="text-white">Welcome back</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="text-foreground">Welcome back</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     Enter your credentials to continue tracking progress.
                   </CardDescription>
                 </CardHeader>
@@ -581,12 +631,18 @@ export default function LoginPage() {
                     </Button>
                   </form>
 
-                  <div className="mt-6 text-center text-sm text-slate-400">
-                    <Link href="/forgot-password" className="text-blue-300 hover:underline">
+                  <div className="mt-6 text-center text-sm text-muted-foreground space-y-2">
+                    <Link href="/forgot-password" className="text-primary hover:underline block">
                       Forgot your password?
                     </Link>
+                    <p>
+                      Don't have an account?{' '}
+                      <Link href="/signup" className="text-primary hover:underline font-medium">
+                        Sign up
+                      </Link>
+                    </p>
                     <div className="mt-2">
-                      <Link href="/" className="hover:text-white">
+                      <Link href="/" className="hover:text-foreground">
                         ← Back to home
                       </Link>
                     </div>

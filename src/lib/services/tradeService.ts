@@ -6,7 +6,6 @@ export class TradeService {
     // Calculate risk/reward ratio if applicable
     const calculatedTrade = {
       ...trade,
-      // Don't calculate P&L - let user enter it directly
       risk_reward_ratio: trade.stop_loss && trade.take_profit 
         ? this.calculateRiskRewardRatio(trade.entry_price, trade.stop_loss, trade.take_profit)
         : null
@@ -33,7 +32,6 @@ export class TradeService {
       throw new Error('Trade not found');
     }
 
-    // Type assertion to ensure TypeScript knows the type
     const existingTrade = existing as Trade;
 
     const updatedTrade = {
@@ -51,8 +49,7 @@ export class TradeService {
 
     const { data, error } = await supabase
       .from('trades')
-      // @ts-ignore
-      .update(updatedTrade)
+      .update(updatedTrade as any)
       .eq('id', id)
       .select()
       .single();
@@ -68,11 +65,21 @@ export class TradeService {
       .eq('id', id);
 
     if (error) throw error;
+    // Note: trade_metrics and trade_reviews are auto-deleted via foreign key cascade
   }
 
-  static async getUserTrades(userId: string, filters?: TradeFilters): Promise<{ trades: Trade[]; total: number }> {
+  /**
+   * Get user trades - optionally uses trade_full_view for enriched data
+   */
+  static async getUserTrades(
+    userId: string, 
+    filters?: TradeFilters,
+    useView: boolean = true
+  ): Promise<{ trades: Trade[]; total: number }> {
+    const tableName = useView ? 'trade_full_view' : 'trades';
+    
     let query = supabase
-      .from('trades')
+      .from(tableName)
       .select('*', { count: 'exact' })
       .eq('user_id', userId)
       .order('entry_date', { ascending: false });
@@ -120,22 +127,97 @@ export class TradeService {
     const { data, error, count } = await query;
 
     if (error) throw error;
-    return { trades: data || [], total: count || 0 };
+    
+    // Map view results to Trade type (discard prefixed columns we don't need in components)
+    const trades: Trade[] = (data || []).map((row: any) => ({
+      id: row.id,
+      user_id: row.user_id,
+      symbol: row.symbol,
+      side: row.side,
+      quantity: row.quantity,
+      entry_price: row.entry_price,
+      exit_price: row.exit_price,
+      entry_date: row.entry_date,
+      exit_date: row.exit_date,
+      status: row.status,
+      profit_loss: row.profit_loss,
+      fees: row.fees,
+      commission: row.commission,
+      strategy: row.strategy,
+      strategy_id: row.strategy_id || null,
+      setup: row.setup,
+      notes: row.notes,
+      tags: row.tags,
+      stop_loss: row.stop_loss,
+      take_profit: row.take_profit,
+      risk_reward_ratio: row.risk_reward_ratio || row.metrics_risk_reward_ratio,
+      mood: row.mood,
+      market_sentiment: row.market_sentiment,
+      market_notes: row.market_notes,
+      lessons_learned: row.lessons_learned || row.review_lesson_learned,
+      trade_analysis: row.trade_analysis || row.review_market_analysis,
+      emotional_state: row.emotional_state || row.review_emotional_state,
+      pre_trade_plan: row.pre_trade_plan || row.review_pre_trade_plan,
+      post_trade_review: row.post_trade_review || row.review_post_trade_review,
+      performance_rating: row.performance_rating || row.review_performance_rating,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    }));
+
+    return { trades, total: count || 0 };
   }
 
-  static async getTrade(id: string): Promise<Trade | null> {
+  static async getTrade(id: string, useView: boolean = true): Promise<Trade | null> {
+    const tableName = useView ? 'trade_full_view' : 'trades';
+    
     const { data, error } = await supabase
-      .from('trades')
+      .from(tableName)
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
 
-    return data;
+    if (!data) return null;
+
+    // Map to Trade type (same mapping as getUserTrades)
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      symbol: data.symbol,
+      side: data.side,
+      quantity: data.quantity,
+      entry_price: data.entry_price,
+      exit_price: data.exit_price,
+      entry_date: data.entry_date,
+      exit_date: data.exit_date,
+      status: data.status,
+      profit_loss: data.profit_loss,
+      fees: data.fees,
+      commission: data.commission,
+      strategy: data.strategy,
+      strategy_id: data.strategy_id || null,
+      setup: data.setup,
+      notes: data.notes,
+      tags: data.tags,
+      stop_loss: data.stop_loss,
+      take_profit: data.take_profit,
+      risk_reward_ratio: data.risk_reward_ratio || (data as any).metrics_risk_reward_ratio,
+      mood: data.mood,
+      market_sentiment: data.market_sentiment,
+      market_notes: data.market_notes,
+      lessons_learned: data.lessons_learned || (data as any).review_lesson_learned,
+      trade_analysis: data.trade_analysis || (data as any).review_market_analysis,
+      emotional_state: data.emotional_state || (data as any).review_emotional_state,
+      pre_trade_plan: data.pre_trade_plan || (data as any).review_pre_trade_plan,
+      post_trade_review: data.post_trade_review || (data as any).review_post_trade_review,
+      performance_rating: data.performance_rating || (data as any).review_performance_rating,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+    };
   }
 
   static async getTradeStats(userId: string): Promise<{
@@ -150,49 +232,41 @@ export class TradeService {
     avgPerformanceRating: number;
     commonMarketSentiment: string;
   }> {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('status, profit_loss, mood, market_sentiment')
-      .eq('user_id', userId);
-
-    if (error) throw error;
-
-    // Properly type the data array
-    const tradesData: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>[] = data || [];
+    const { trades } = await this.getUserTrades(userId, undefined, false);
 
     const stats = {
-      totalTrades: tradesData.length,
-      openTrades: tradesData.filter((t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => t.status === 'open').length,
-      closedTrades: tradesData.filter((t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => t.status === 'closed').length,
-      totalPnL: tradesData.reduce((sum: number, t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => sum + (t.profit_loss || 0), 0),
+      totalTrades: trades.length,
+      openTrades: trades.filter(t => t.status === 'open').length,
+      closedTrades: trades.filter(t => t.status === 'closed').length,
+      totalPnL: trades.reduce((sum, t) => sum + (t.profit_loss || 0), 0),
       winRate: 0,
       avgWin: 0,
       avgLoss: 0,
-      moodStats: {},
+      moodStats: {} as { [key: string]: number },
       avgPerformanceRating: 0,
       commonMarketSentiment: ''
     };
 
-    const closedTrades = tradesData.filter((t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => t.status === 'closed' && t.profit_loss !== null);
-    const winningTrades = closedTrades.filter((t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => t.profit_loss! > 0);
-    const losingTrades = closedTrades.filter((t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => t.profit_loss! < 0);
+    const closedTrades = trades.filter(t => t.status === 'closed' && t.profit_loss !== null);
+    const winningTrades = closedTrades.filter(t => (t.profit_loss || 0) > 0);
+    const losingTrades = closedTrades.filter(t => (t.profit_loss || 0) < 0);
 
     if (closedTrades.length > 0) {
       stats.winRate = (winningTrades.length / closedTrades.length) * 100;
     }
 
     if (winningTrades.length > 0) {
-      const totalWinAmount = winningTrades.reduce((sum: number, t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => sum + (t.profit_loss || 0), 0);
+      const totalWinAmount = winningTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
       stats.avgWin = totalWinAmount / winningTrades.length;
     }
 
     if (losingTrades.length > 0) {
-      const totalLossAmount = losingTrades.reduce((sum: number, t: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => sum + Math.abs(t.profit_loss || 0), 0);
+      const totalLossAmount = losingTrades.reduce((sum, t) => sum + Math.abs(t.profit_loss || 0), 0);
       stats.avgLoss = totalLossAmount / losingTrades.length;
     }
 
     const moodCounts: { [key: string]: number } = {};
-    tradesData.forEach((trade: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => {
+    trades.forEach(trade => {
       if (trade.mood) {
         moodCounts[trade.mood] = (moodCounts[trade.mood] || 0) + 1;
       }
@@ -200,7 +274,7 @@ export class TradeService {
     stats.moodStats = moodCounts;
 
     const sentimentCounts: { [key: string]: number } = {};
-    tradesData.forEach((trade: Pick<Trade, 'status' | 'profit_loss' | 'mood' | 'market_sentiment'>) => {
+    trades.forEach(trade => {
       if (trade.market_sentiment) {
         sentimentCounts[trade.market_sentiment] = (sentimentCounts[trade.market_sentiment] || 0) + 1;
       }
@@ -212,6 +286,12 @@ export class TradeService {
       );
     }
 
+    const tradesWithRating = trades.filter(t => t.performance_rating !== null && t.performance_rating !== undefined);
+    if (tradesWithRating.length > 0) {
+      const totalRating = tradesWithRating.reduce((sum, t) => sum + (t.performance_rating || 0), 0);
+      stats.avgPerformanceRating = totalRating / tradesWithRating.length;
+    }
+
     return stats;
   }
 
@@ -220,20 +300,12 @@ export class TradeService {
     realizedPnL: number;
     unrealizedPnL: number;
   }> {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('status, profit_loss')
-      .eq('user_id', userId);
-
-    if (error) throw error;
+    const { trades } = await this.getUserTrades(userId, undefined, false);
     
-    // Properly type the data array
-    const tradesData: Pick<Trade, 'status' | 'profit_loss'>[] = data || [];
-    
-    const closedTrades = tradesData.filter((t: Pick<Trade, 'status' | 'profit_loss'>) => t.status === 'closed');
-    const openTrades = tradesData.filter((t: Pick<Trade, 'status' | 'profit_loss'>) => t.status === 'open');
-    const realizedPnL = closedTrades.reduce((sum: number, t: Pick<Trade, 'status' | 'profit_loss'>) => sum + (t.profit_loss || 0), 0);
-    const unrealizedPnL = openTrades.reduce((sum: number, t: Pick<Trade, 'status' | 'profit_loss'>) => sum + (t.profit_loss || 0), 0);
+    const closedTrades = trades.filter(t => t.status === 'closed');
+    const openTrades = trades.filter(t => t.status === 'open');
+    const realizedPnL = closedTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
+    const unrealizedPnL = openTrades.reduce((sum, t) => sum + (t.profit_loss || 0), 0);
 
     return {
       balance: realizedPnL,
@@ -247,23 +319,14 @@ export class TradeService {
     performanceBySentiment: { [sentiment: string]: { avgPnL: number; count: number } };
     recentLessons: string[];
   }> {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('mood, market_sentiment, profit_loss, lessons_learned, status, created_at')
-      .eq('user_id', userId)
-      .eq('status', 'closed')
-      .not('profit_loss', 'is', null)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    // Properly type the data array
-    const tradesData: Pick<Trade, 'mood' | 'market_sentiment' | 'profit_loss' | 'lessons_learned' | 'status' | 'created_at'>[] = data || [];
+    const { trades } = await this.getUserTrades(userId, { status: 'closed' }, false);
+    
+    const closedTradesWithPnL = trades.filter(t => t.status === 'closed' && t.profit_loss !== null);
 
     const performanceByMood: { [mood: string]: { totalPnL: number; count: number } } = {};
     const performanceBySentiment: { [sentiment: string]: { totalPnL: number; count: number } } = {};
 
-    tradesData.forEach((trade: Pick<Trade, 'mood' | 'market_sentiment' | 'profit_loss' | 'lessons_learned' | 'status' | 'created_at'>) => {
+    closedTradesWithPnL.forEach(trade => {
       if (trade.mood) {
         if (!performanceByMood[trade.mood]) {
           performanceByMood[trade.mood] = { totalPnL: 0, count: 0 };
@@ -299,10 +362,11 @@ export class TradeService {
       };
     });
 
-    const recentLessons = tradesData
-      .filter((trade: Pick<Trade, 'mood' | 'market_sentiment' | 'profit_loss' | 'lessons_learned' | 'status' | 'created_at'>) => trade.lessons_learned && trade.lessons_learned.trim())
+    const recentLessons = closedTradesWithPnL
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .filter(trade => trade.lessons_learned && trade.lessons_learned.trim())
       .slice(0, 10)
-      .map((trade: Pick<Trade, 'mood' | 'market_sentiment' | 'profit_loss' | 'lessons_learned' | 'status' | 'created_at'>) => trade.lessons_learned!)
+      .map(trade => trade.lessons_learned!)
       .filter((lesson): lesson is string => lesson !== null);
 
     return {
@@ -312,8 +376,6 @@ export class TradeService {
     };
   }
 
-  // REMOVED: calculateProfitLoss() - Users enter P&L directly from broker
-  
   private static calculateRiskRewardRatio(
     entryPrice: number,
     stopLoss: number,

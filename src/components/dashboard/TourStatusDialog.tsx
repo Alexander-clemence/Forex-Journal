@@ -34,7 +34,7 @@ export function TourStatusDialog({ open, onOpenChange }: TourStatusDialogProps) 
             <span className={`text-sm font-semibold ${dismissed ? 'text-green-600' : 'text-blue-600'}`}>
               {dismissed ? 'Dismissed' : 'New'}
             </span>
-          </div>
+            </div>
           <p className="mt-2 text-xs text-slate-500">
             Resetting the guide will show the walkthrough modal the next time you click "Guide me."
           </p>

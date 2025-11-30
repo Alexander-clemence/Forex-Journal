@@ -25,6 +25,7 @@ export function useSettings() {
     
     try {
       setLoading(true);
+      setError(null);
       const userSettings = await SettingsService.getUserSettings(user.id);
       setSettings(userSettings);
       
@@ -33,21 +34,33 @@ export function useSettings() {
         setTheme(userSettings.theme);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load settings');
+      console.error('Error loading settings:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load settings';
+      setError(errorMessage);
+      // Set default settings on error so the app can still function
+      const defaultSettings = SettingsService.getDefaultSettings(user.id);
+      setSettings(defaultSettings);
     } finally {
       setLoading(false);
     }
   };
 
   const saveSettings = async (newSettings: Partial<UserSettings>) => {
-    if (!user?.id || !settings) return;
+    if (!user?.id) {
+      const errorMsg = 'User not authenticated';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    }
 
     try {
       setSaving(true);
       setError(null);
 
+      // Get current settings or use defaults
+      const currentSettings = settings || SettingsService.getDefaultSettings(user.id);
+
       const updatedSettings = {
-        ...settings,
+        ...currentSettings,
         ...newSettings,
         user_id: user.id
       };
@@ -62,6 +75,7 @@ export function useSettings() {
 
       return savedSettings;
     } catch (err) {
+      console.error('Error saving settings:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to save settings';
       setError(errorMessage);
       throw new Error(errorMessage);

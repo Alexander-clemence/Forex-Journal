@@ -578,25 +578,25 @@ export function TradingAnalytics() {
                   </p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={ratingData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ratingData}>
+                  <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="rating" 
                       tickFormatter={(value) => `${value}⭐`}
                     />
-                    <YAxis tickFormatter={formatCurrency} />
-                    <Tooltip
-                      formatter={(value, name) => [
-                        name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
-                        name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
-                      ]}
-                    />
-                    <Legend />
-                    <Bar dataKey="avgPnL" fill="#3B82F6" name="Avg P&L" />
-                    <Bar dataKey="winRate" fill="#10B981" name="Win Rate %" />
-                  </BarChart>
-                </ResponsiveContainer>
+                  <YAxis tickFormatter={formatCurrency} />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      name === 'avgPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
+                      name === 'avgPnL' ? 'Avg P&L' : 'Win Rate'
+                    ]}
+                  />
+                  <Legend />
+                  <Bar dataKey="avgPnL" fill="#3B82F6" name="Avg P&L" />
+                  <Bar dataKey="winRate" fill="#10B981" name="Win Rate %" />
+                </BarChart>
+              </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
@@ -708,9 +708,9 @@ export function TradingAnalytics() {
                   </p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={400}>
+              <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={strategyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="strategy" 
                       angle={-45}
@@ -729,13 +729,13 @@ export function TradingAnalytics() {
                       tickFormatter={(value) => `${value.toFixed(0)}%`}
                       label={{ value: 'Win Rate (%)', angle: 90, position: 'insideRight' }}
                     />
-                    <Tooltip
-                      formatter={(value, name) => [
-                        name === 'totalPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
-                        name === 'totalPnL' ? 'Total P&L' : 'Win Rate'
-                      ]}
-                    />
-                    <Legend />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      name === 'totalPnL' ? formatCurrency(Number(value)) : `${Number(value).toFixed(1)}%`,
+                      name === 'totalPnL' ? 'Total P&L' : 'Win Rate'
+                    ]}
+                  />
+                  <Legend />
                     <Bar 
                       yAxisId="left"
                       dataKey="totalPnL" 
@@ -753,8 +753,8 @@ export function TradingAnalytics() {
                       activeDot={{ r: 7 }}
                       name="Win Rate"
                     />
-                  </BarChart>
-                </ResponsiveContainer>
+                </BarChart>
+              </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
@@ -882,13 +882,13 @@ export function TradingAnalytics() {
           <Card>
             <CardHeader className="space-y-4">
               <div className="flex flex-col gap-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Trade Timeline
-                </CardTitle>
-                <CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Trade Timeline
+              </CardTitle>
+              <CardDescription>
                   Chronological view of trades—filter by timeframe and trade outcome to spot streaks faster.
-                </CardDescription>
+              </CardDescription>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Select value={timelineRange} onValueChange={(value) => setTimelineRange(value as 'all' | '1m' | '3m' | '6m' | '12m')}>

@@ -143,6 +143,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
   const applyTheme = useCallback((newTheme: 'light' | 'dark') => {
     const root = window.document.documentElement;
@@ -163,16 +164,29 @@ export function ThemeProvider({
     return currentTheme === 'system' ? getSystemTheme() : currentTheme;
   }, [getSystemTheme]);
 
-  // Load saved theme from localStorage
+  // Load saved theme from localStorage and apply immediately
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedTheme = localStorage.getItem(storageKey) as Theme;
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       setTheme(savedTheme);
+      // Apply theme immediately
+      const initialResolvedTheme = savedTheme === 'system' ? getSystemTheme() : savedTheme;
+      applyTheme(initialResolvedTheme);
+      setResolvedTheme(initialResolvedTheme);
+    } else {
+      // Apply default theme immediately
+      const initialResolvedTheme = resolveTheme(defaultTheme);
+      applyTheme(initialResolvedTheme);
+      setResolvedTheme(initialResolvedTheme);
     }
-  }, [storageKey]);
+  }, [storageKey, defaultTheme, applyTheme, getSystemTheme, resolveTheme]);
 
   // Listen for system theme changes
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
    
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
@@ -191,7 +205,10 @@ export function ThemeProvider({
   useEffect(() => {
     const newResolvedTheme = resolveTheme(theme);
     applyTheme(newResolvedTheme);
-    localStorage.setItem(storageKey, theme);
+    setResolvedTheme(newResolvedTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, theme);
+    }
   }, [theme, storageKey, applyTheme, resolveTheme]);
 
   // Inject CSS styles once

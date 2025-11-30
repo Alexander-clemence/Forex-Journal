@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useSettings } from '@/lib/hooks/useSettings';
 
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 
@@ -27,8 +29,14 @@ import {
   Save,
   CheckCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Crown,
+  Gift,
+  Zap
 } from 'lucide-react';
+import { useSubscription } from '@/lib/hooks/useSubscription';
+import { formatCurrency, getTierBadgeColor } from '@/lib/utils/subscription';
+import Link from 'next/link';
 import { useTheme } from '@/components/theme/ThemeProvider';
 import { UpdateSettings } from '@/components/update/UpdateNotification';
 
@@ -129,7 +137,10 @@ ThemeButton.displayName = 'ThemeButton';
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { settings, loading, saving, saveSettings, updateProfile, exportData } = useSettings();
-  const { setTheme: setGlobalTheme } = useTheme();
+  const { theme, setTheme: setGlobalTheme } = useTheme();
+  const { subscriptionInfo, tier, hasPremium, loading: subscriptionLoading, refetch } = useSubscription();
+  const searchParams = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'profile';
   
   const [profile, setProfile] = useState({
     displayName: '',
@@ -157,7 +168,6 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
 
   useEffect(() => {
     if (settings) {
@@ -178,7 +188,7 @@ export default function SettingsPage() {
         riskPerTrade: settings.trading_preferences.risk_per_trade || 2
       });
 
-      setTheme(settings.theme);
+      // Theme is already synced by useSettings hook, no need to update here
     }
   }, [settings, user]);
 
@@ -201,7 +211,7 @@ export default function SettingsPage() {
   }, [profile, updateProfile, saveSettings]);
 
   const handleThemeChange = useCallback(async (newTheme: 'light' | 'dark' | 'system') => {
-    setTheme(newTheme);
+    // Update global theme immediately for instant feedback
     setGlobalTheme(newTheme);
     
     try {
@@ -210,8 +220,9 @@ export default function SettingsPage() {
         description: 'Your theme preference has been saved.'
       });
     } catch (error) {
-      setTheme(settings?.theme || 'system');
-      setGlobalTheme(settings?.theme || 'system');
+      // Revert to previous theme on error
+      const previousTheme = settings?.theme || 'system';
+      setGlobalTheme(previousTheme);
       toast.error('Error', {
         description: 'Failed to save theme preference.'
       });
@@ -343,11 +354,16 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1 sm:gap-2 h-auto">
+      <Tabs defaultValue={defaultTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2 h-auto">
           <TabsTrigger value="profile" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
             <User className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Profile</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
+            <Crown className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Subscription</span>
+            <span className="sm:hidden">Sub</span>
           </TabsTrigger>
           <TabsTrigger value="preferences" className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm py-2">
             <SettingsIcon className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -452,6 +468,26 @@ export default function SettingsPage() {
                   )}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="subscription" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5" />
+                Subscription Management
+              </CardTitle>
+              <CardDescription>Manage your subscription plan, billing, and payment methods</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/dashboard/subscription">
+                <Button className="w-full">
+                  <Crown className="h-4 w-4 mr-2" />
+                  Manage Subscription
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </TabsContent>

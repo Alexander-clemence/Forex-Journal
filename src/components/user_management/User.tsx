@@ -20,14 +20,19 @@ import {
   Headphones,
   ChevronDown,
   RefreshCw,
-  UserPlus
+  UserPlus,
+  Gift,
+  Infinity
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { getTier, getTierBadgeColor } from '@/lib/utils/subscription';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 // Use the types from your database.ts file
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
+type UserWithSubscription = Database['public']['Views']['profile_with_subscription']['Row'] & { email?: string };
 
 const roleOptions = [
   { value: 'user', label: 'User', description: 'Basic trading functionality', icon: UserCheck, color: 'text-gray-600', bgColor: 'bg-gray-100' },
@@ -39,7 +44,8 @@ const roleOptions = [
 
 export default function UserManagement() {
   const authData = useAuth();
-  const [users, setUsers] = useState<ProfileWithEmail[]>([]);
+  const [users, setUsers] = useState<UserWithSubscription[]>([]);
+  const [processingSubscription, setProcessingSubscription] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -90,8 +96,8 @@ export default function UserManagement() {
         throw new Error('No active session');
       }
 
-      // Call API to get users with emails
-      const response = await fetch('/api/admin/list-users', {
+      // Call API to get users with subscription info
+      const response = await fetch('/api/admin/users-with-subscriptions', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -103,7 +109,7 @@ export default function UserManagement() {
       }
 
       const data = await response.json();
-      setUsers(data.data?.users || []);
+      setUsers(data.users || []);
     } catch (err) {
       setError('Failed to load users: ' + (err as any).message);
     } finally {
@@ -151,6 +157,49 @@ export default function UserManagement() {
       setError('Failed to update user: ' + (err as any).message);
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleSubscriptionAction = async (userId: string, action: 'premium_monthly' | 'premium_yearly' | 'trial' | 'lifetime' | 'cancel') => {
+    setProcessingSubscription(userId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      let endpoint = '';
+      let body: any = { userId };
+
+      if (action === 'lifetime') {
+        endpoint = '/api/admin/subscriptions/grant-lifetime';
+      } else if (action === 'cancel') {
+        endpoint = '/api/admin/subscriptions/cancel';
+      } else {
+        endpoint = '/api/admin/subscriptions/set-premium';
+        body = { userId, planCode: action };
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update subscription');
+      }
+
+      toast.success('Subscription updated successfully');
+      await loadUsers();
+    } catch (err) {
+      toast.error('Failed to update subscription: ' + (err as any).message);
+    } finally {
+      setProcessingSubscription(null);
     }
   };
 
@@ -441,6 +490,7 @@ export default function UserManagement() {
                 <TableRow>
                   <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">User</TableHead>
                   <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Role</TableHead>
+                  <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Subscription</TableHead>
                   <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 hidden sm:table-cell">Created</TableHead>
                   <TableHead className="px-3 sm:px-4 lg:px-6 py-2 sm:py-3 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</TableHead>
                 </TableRow>
@@ -511,6 +561,57 @@ export default function UserManagement() {
                           </div>
                         )}
                       </TableCell>
+                      <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+                        <div className="space-y-1">
+                          {(() => {
+                            // Use exact backend logic for isActive
+                            const isActive =
+                              user.subscription_status === 'active' &&
+                              (!user.subscription_ends_at ||
+                                new Date(user.subscription_ends_at) > new Date());
+                            
+                            if (!isActive) {
+                              return (
+                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                                  Free
+                                </span>
+                              );
+                            }
+                            
+                            const tier = getTier({
+                              plan_code: user.plan_code,
+                              subscription_status: user.subscription_status,
+                              subscription_ends_at: user.subscription_ends_at || null,
+                            });
+                            return (
+                              <>
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTierBadgeColor(tier.tier)}`}>
+                                  {tier.tier === 'trial' && <Gift className="h-3 w-3 mr-1" />}
+                                  {tier.tier === 'premium' && <Crown className="h-3 w-3 mr-1" />}
+                                  {tier.tier === 'lifetime' && <Infinity className="h-3 w-3 mr-1" />}
+                                  {tier.tier.charAt(0).toUpperCase() + tier.tier.slice(1)}
+                                </span>
+                                {user.plan_name && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{user.plan_name}</div>
+                                )}
+                                {user.subscription_ends_at && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    Expires: {new Date(user.subscription_ends_at).toLocaleDateString()}
+                                  </div>
+                                )}
+                                {tier.tier === 'lifetime' && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">Never expires</div>
+                                )}
+                                {tier.tier === 'trial' && user.subscription_ends_at && (
+                                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                                    {Math.ceil((new Date(user.subscription_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days left
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </TableCell>
                       <TableCell className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-4 w-4" />
@@ -541,6 +642,7 @@ export default function UserManagement() {
                             </button>
                           </div>
                         ) : (
+                          <div className="flex flex-col gap-1">
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => {
@@ -554,6 +656,7 @@ export default function UserManagement() {
                                 });
                               }}
                               className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-100 rounded"
+                                title="Edit user"
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
@@ -561,10 +664,33 @@ export default function UserManagement() {
                               <button
                                 onClick={() => deleteUser(user.id)}
                                 className="text-red-600 hover:text-red-900 p-1 hover:bg-red-100 rounded"
+                                  title="Delete user"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             )}
+                            </div>
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleSubscriptionAction(user.id, e.target.value as any);
+                                  e.target.value = '';
+                                }
+                              }}
+                              disabled={processingSubscription === user.id}
+                              className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
+                              title="Manage subscription"
+                            >
+                              <option value="">Sub...</option>
+                              <option value="trial">Reset Trial (30 days)</option>
+                              <option value="premium_monthly">Grant Premium Monthly</option>
+                              <option value="premium_yearly">Grant Premium Yearly</option>
+                              <option value="lifetime">Grant Lifetime</option>
+                              {(user.subscription_status === 'active' || user.plan_code) && (
+                                <option value="cancel">Cancel Subscription</option>
+                              )}
+                            </select>
                           </div>
                         )}
                       </TableCell>

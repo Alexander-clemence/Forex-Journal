@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Moon, Sun, Monitor, Check } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-import { useSettings } from '@/lib/hooks/useSettings';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { SettingsService } from '@/lib/services/settingsService';
 import { toast } from 'sonner';
 
 const THEMES = [
@@ -50,34 +51,32 @@ ThemeMenuItem.displayName = 'ThemeMenuItem';
 
 export const ThemeToggle = memo(function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const { settings, saveSettings } = useSettings();
+  const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
   const handleThemeChange = useCallback(
-    (value: ThemeChoice) => {
+    async (value: ThemeChoice) => {
       if (isSaving) return;
+      
+      // Update theme immediately for instant feedback
       setTheme(value);
 
-      if (!settings) {
-        return;
-      }
-
-      setIsSaving(true);
-      const maybePromise = saveSettings({ theme: value });
-
-      if (!maybePromise || typeof maybePromise.finally !== 'function') {
-        setIsSaving(false);
-        return;
-      }
-
-      maybePromise
-        .catch((err: Error) => {
+      // If user is logged in, save to database
+      if (user?.id) {
+        setIsSaving(true);
+        try {
+          // Update only the theme field in the database
+          await SettingsService.updateTheme(user.id, value);
+        } catch (err) {
           console.error('Failed to update theme preference', err);
           toast.error('Could not update theme preference. Please try again.');
-        })
-        .finally(() => setIsSaving(false));
+        } finally {
+          setIsSaving(false);
+        }
+      }
+      // If no user, theme is still saved to localStorage by ThemeProvider
     },
-    [isSaving, saveSettings, setTheme, settings]
+    [isSaving, setTheme, user?.id]
   );
 
   const CurrentIcon = useMemo(() => {

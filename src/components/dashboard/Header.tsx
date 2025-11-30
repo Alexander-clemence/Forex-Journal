@@ -11,31 +11,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, LogOut, Menu, Sparkles, MessageSquare } from 'lucide-react';
+import { User, Settings, LogOut, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { useUIStore } from '@/lib/stores/uiStore';
 import { TourStatusDialog } from './TourStatusDialog';
 import { useGuideDialogStore } from '@/lib/stores/guideDialogStore';
+import { useSidebarStore } from '@/lib/stores/sidebarStore';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onMobileMenuToggle?: () => void;
 }
-
-
-// Memoized Mobile Menu Button
-const MobileMenuButton = memo(({ onClick }: { onClick: () => void }) => (
-  <Button
-    variant="ghost"
-    size="sm"
-    className="md:hidden"
-    onClick={onClick}
-  >
-    <Menu className="h-5 w-5" />
-    <span className="sr-only">Toggle menu</span>
-  </Button>
-));
-MobileMenuButton.displayName = 'MobileMenuButton';
 
 // Memoized User Avatar
 const UserAvatar = memo(({ displayName, email }: { displayName?: string; email?: string }) => {
@@ -44,7 +31,7 @@ const UserAvatar = memo(({ displayName, email }: { displayName?: string; email?:
   }, [displayName, email]);
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-[var(--color-primary-foreground)] text-sm font-semibold shadow-lg">
       {initial || <User className="h-4 w-4" />}
     </div>
   );
@@ -98,28 +85,45 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          {/* Left side - Logo and mobile menu */}
+      <header 
+        className={cn(
+          'sticky top-5 z-50 rounded-[14px]',
+          'bg-[var(--color-card)]/80 backdrop-blur-md',
+          'border border-[var(--color-border)]',
+          'shadow-sm',
+          'transition-all duration-300',
+          'mb-5',
+          'mx-5',
+          'lg:ml-[calc(var(--sidebar-width,240px)+25px)]',
+          'lg:mr-5',
+          'lg:w-[calc(100vw-var(--sidebar-width,240px)-50px)]',
+          'lg:max-w-none'
+        )}
+      >
+        <div className="flex h-16 items-center justify-between px-6">
+          {/* Left side - Empty space for balance */}
           <div className="flex items-center space-x-4">
-            <MobileMenuButton onClick={handleMobileMenuToggle} />
-
+            {/* Mobile menu button is now in sidebar */}
           </div>
 
           {/* Right side - Theme toggle and user menu */}
-          <div className="flex items-center space-x-4" data-tour="shortcuts-hint" id="keyboard-shortcuts-help">
+          <div className="flex items-center space-x-3" data-tour="shortcuts-hint" id="keyboard-shortcuts-help">
             <Button 
               variant="outline" 
               size="sm"
               asChild
+              className="h-9 bg-[var(--color-card)]/50 hover:bg-[var(--color-card)] border-[var(--color-border)]"
             >
               <a href="mailto:support@stralysltd.co.tz">
-                <MessageSquare className="h-4 w-4 mr-2" />
                 Feedback
               </a>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleGuideTour}>
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleGuideTour}
+              className="h-9 bg-[var(--color-card)]/50 hover:bg-[var(--color-card)] border-[var(--color-border)]"
+            >
               Guide me
             </Button>
             <ThemeToggle />
@@ -128,7 +132,10 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
             {userData && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-16 w-16 rounded-full">
+                  <Button 
+                    variant="ghost" 
+                    className="relative h-9 w-9 rounded-full p-0 hover:bg-[var(--color-muted)]"
+                  >
                     <UserAvatar 
                       displayName={userData.displayName} 
                       email={userData.email} 
@@ -155,7 +162,7 @@ export default function Header({ onMobileMenuToggle }: HeaderProps) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    className="text-red-600 dark:text-red-400"
+                    className="text-[var(--color-destructive)]"
                     onClick={handleSignOut}
                   >
                     <LogOut className="mr-2 h-4 w-4" />

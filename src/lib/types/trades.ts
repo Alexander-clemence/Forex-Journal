@@ -1,6 +1,7 @@
 // lib/types/trades.ts - Extended TradeFilters for journal features
 import { Database } from './database';
 
+// Trade type directly matches the database trades table structure
 export type Trade = Database['public']['Tables']['trades']['Row'];
 export type TradeInsert = Database['public']['Tables']['trades']['Insert'];
 export type TradeUpdate = Database['public']['Tables']['trades']['Update'];
@@ -15,6 +16,7 @@ export interface TradeFormData {
   exit_price?: number;
   entry_date: string;
   exit_date?: string;
+  profit_loss?: number;
   strategy?: string;
   setup?: string;
   notes?: string;

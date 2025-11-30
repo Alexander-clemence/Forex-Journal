@@ -400,3 +400,6 @@ If you encounter any issues or have questions:
 
 Remember: The more detailed and consistent your trade journaling, the more valuable insights you'll gain from your data.
 
+
+
+

@@ -7,11 +7,12 @@ import { WhatsNewDialog } from '@/components/dashboard/WhatsNewDialog';
 import { ShortcutDialog } from '@/components/dashboard/ShortcutDialog';
 import { SkipNavLink, SkipNavContent } from '@/components/ui/skip-nav';
 import { useShortcutStore } from '@/lib/stores/shortcutStore';
+import { useSidebarStore } from '@/lib/stores/sidebarStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { GuidedTourDialog } from '@/components/dashboard/GuidedTourDialog';
-
-
+import { WelcomeTrialDialog } from '@/components/dashboard/WelcomeTrialDialog';
+import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
   children,
@@ -20,6 +21,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { open, toggle } = useShortcutStore();
+  const { isOpen: sidebarOpen } = useSidebarStore();
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.shiftKey && event.key === '?') {
@@ -58,25 +61,41 @@ export default function DashboardLayout({
       globalThis.window?.removeEventListener('keydown', handler);
     };
   }, [router, toggle]);
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 relative">
         {/* Sidebar */}
         <Sidebar />
         
-        {/* Main content */}
-        <div className="lg:pl-64">
+        {/* Main content area - reacts to sidebar state */}
+        <div 
+          className={cn(
+            'transition-all duration-300 ease-out',
+            'lg:pl-0' // Header handles its own margin
+          )}
+        >
           <SkipNavLink href="#dashboard-main" />
+          
           {/* Header */}
           <Header/>
+          
+          {/* Dialogs */}
           <WhatsNewDialog />
           <ShortcutDialog />
           <GuidedTourDialog />
+          <WelcomeTrialDialog />
           
           {/* Page content */}
           <SkipNavContent id="dashboard-main">
-            <main className="py-6">
-              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <main 
+              className="py-6 transition-all duration-300"
+              style={{
+                paddingLeft: 'calc(var(--sidebar-width, 240px) + 50px)',
+                paddingRight: '25px',
+              }}
+            >
+              <div className="mx-auto max-w-7xl">
                 {children}
               </div>
             </main>

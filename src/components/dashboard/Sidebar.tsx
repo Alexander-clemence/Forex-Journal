@@ -1,12 +1,10 @@
 'use client';
 
-import { useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTodayStats } from '@/lib/hooks/useTodayStats';
-import { Button } from '@/components/ui/button';
 import {
   BarChart3,
   PlusCircle,
@@ -14,16 +12,21 @@ import {
   Menu,
   X,
   Home,
-  DollarSign,
   Users,
+  User,
   Wallet,
-  Shield,
+  DollarSign,
   Loader2,
   LucideIcon,
-  InboxIcon
+  InboxIcon,
+  LogOut,
+  Receipt
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUIStore } from '@/lib/stores/uiStore';
+import { useSidebarStore } from '@/lib/stores/sidebarStore';
+import { useTheme } from '@/components/theme/ThemeProvider';
+import { ForexJournalIcon } from '@/components/ui/ForexJournalIcon';
 
 interface NavigationItem {
   name: string;
@@ -38,7 +41,9 @@ const navIdMap: Record<string, string> = {
   '/dashboard/trades/new': 'sidebar-add-trade',
   '/dashboard/analytics': 'sidebar-analytics',
   '/dashboard/balance': 'sidebar-account-balance',
+  '/dashboard/profile': 'sidebar-profile',
   '/dashboard/settings': 'sidebar-settings',
+  '/dashboard/billing': 'sidebar-billing',
   '/dashboard/export-data': 'sidebar-export',
 };
 
@@ -48,64 +53,97 @@ const navigation: NavigationItem[] = [
   { name: 'Add Trade', href: '/dashboard/trades/new', icon: PlusCircle, permission: 'trades.create' },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3, permission: 'analytics.view' },
   { name: 'Account Balance', href: '/dashboard/balance', icon: Wallet },
+  { name: 'Profile', href: '/dashboard/profile', icon: User },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, permission: 'settings.modify_own' },
-  { name: 'Export Data', href: '/dashboard/export-data', icon: InboxIcon,},
+  { name: 'Billing History', href: '/dashboard/billing', icon: Receipt },
+  { name: 'Export Data', href: '/dashboard/export-data', icon: InboxIcon },
 ];
 
 const adminNavigation: NavigationItem[] = [
   { name: 'Users', href: '/dashboard/users', icon: Users, permission: 'users.manage' },
 ];
 
-// Memoized Header Component
-const SidebarHeader = memo(({ onClose }: { onClose: () => void }) => (
-  <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
-    <div className="flex items-center gap-2">
-      <Image 
-        src="/Forex Journal Logo.png" 
-        alt="Forex Journal Logo" 
-        width={32} 
-        height={32}
-        className="h-8 w-8 object-contain"
-        priority
-      />
-      <span className="text-lg font-semibold text-gray-900 dark:text-white">
-        Forex Journal
-      </span>
-    </div>
-    
-    <Button
-      variant="ghost"
-      size="sm"
-      className="lg:hidden"
-      onClick={onClose}
+// Memoized Navigation Item Component
+const NavItem = memo(({ 
+  item, 
+  isActive, 
+  isAdminOnly,
+  isOpen,
+  onClick
+}: { 
+  item: NavigationItem; 
+  isActive: boolean;
+  isAdminOnly: boolean;
+  isOpen: boolean;
+  onClick?: () => void;
+}) => {
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className={cn(
+        'group relative flex items-center h-11 w-11 gap-3 px-3 rounded-lg transition-all duration-300',
+        'text-sm font-medium capitalize',
+        'text-[var(--color-sidebar-foreground)]/80 hover:text-[var(--color-sidebar-foreground)]',
+        'hover:bg-[var(--color-sidebar-accent)]',
+        isOpen && 'w-full',
+        isActive && 'bg-[var(--color-sidebar-primary)] text-[var(--color-sidebar-primary-foreground)]',
+        isActive && 'hover:bg-[var(--color-sidebar-primary)]/80'
+      )}
+      id={navIdMap[item.href]}
     >
-      <X className="h-4 w-4" />
-    </Button>
-  </div>
-));
-SidebarHeader.displayName = 'SidebarHeader';
+      <item.icon className="h-[18px] w-[18px] flex-shrink-0" />
+      <span
+        className={cn(
+          'whitespace-nowrap font-medium transition-opacity duration-250',
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none',
+          !isOpen && 'group-hover:opacity-100 group-hover:pointer-events-auto',
+          !isOpen && 'absolute left-full ml-2 px-3 py-2 rounded-md',
+          !isOpen && 'bg-[var(--color-sidebar)] backdrop-blur-md',
+          !isOpen && 'shadow-lg z-[100] text-[var(--color-sidebar-foreground)]',
+          !isOpen && 'group-hover:before:content-[""] group-hover:before:absolute',
+          !isOpen && 'group-hover:before:left-[-4px] group-hover:before:top-1/2',
+          !isOpen && 'group-hover:before:-translate-y-1/2',
+          !isOpen && 'group-hover:before:h-2 group-hover:before:w-2',
+          !isOpen && 'group-hover:before:rotate-45 group-hover:before:rounded-sm',
+          !isOpen && 'group-hover:before:bg-[var(--color-sidebar)]'
+        )}
+      >
+        {item.name}
+      </span>
+      {isAdminOnly && isOpen && (
+        <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-[var(--color-sidebar-primary)]/30 text-[var(--color-sidebar-primary-foreground)] rounded font-medium">
+          Admin
+        </span>
+      )}
+    </Link>
+  );
+});
+NavItem.displayName = 'NavItem';
 
 // Memoized User Info Component
-const UserInfo = memo(({ email, displayName }: { email?: string; displayName?: string }) => {
+const UserInfo = memo(({ email, displayName, isOpen }: { 
+  email?: string; 
+  displayName?: string;
+  isOpen: boolean;
+}) => {
   const initial = useMemo(() => email?.charAt(0).toUpperCase() || 'U', [email]);
 
+  if (!isOpen) return null;
+
   return (
-    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-            <span className="text-sm font-medium text-white">
-              {initial}
-            </span>
-          </div>
+    <div className="mt-auto px-1.5 py-3 border-t border-[var(--color-sidebar-border)]">
+      <div className="flex items-center gap-3 px-3 h-11">
+        <div className="h-8 w-8 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-sm font-semibold text-[var(--color-primary-foreground)] flex-shrink-0">
+          {initial}
         </div>
-        <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900 dark:text-white">
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-medium text-[var(--color-sidebar-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">
             {displayName || 'User'}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          </div>
+          <div className="text-[11px] text-[var(--color-sidebar-foreground)]/70 whitespace-nowrap overflow-hidden text-ellipsis">
             {email}
-          </p>
+          </div>
         </div>
       </div>
     </div>
@@ -113,66 +151,17 @@ const UserInfo = memo(({ email, displayName }: { email?: string; displayName?: s
 });
 UserInfo.displayName = 'UserInfo';
 
-// Memoized Navigation Item Component
-const NavItem = memo(({ 
-  item, 
-  isActive, 
-  isAdminOnly, 
-  onClose 
-}: { 
-  item: NavigationItem; 
-  isActive: boolean; 
-  isAdminOnly: boolean;
-  onClose: () => void;
-}) => {
-  const handleClick = useCallback(() => {
-    onClose();
-  }, [onClose]);
-
-  // Determine icon color class
-  let iconClass: string;
-  if (isActive) {
-    iconClass = 'text-blue-600 dark:text-blue-400';
-  } else if (isAdminOnly) {
-    iconClass = 'text-blue-500 group-hover:text-blue-600';
-  } else {
-    iconClass = 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300';
-  }
-
-  return (
-    <Link
-      href={item.href}
-      onClick={handleClick}
-      className={cn(
-        'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
-        isActive
-          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
-          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700',
-        isAdminOnly && 'border-l-2 border-blue-400'
-      )}
-      id={navIdMap[item.href]}
-    >
-      <item.icon
-        className={cn('mr-3 h-5 w-5 flex-shrink-0', iconClass)}
-      />
-      {item.name}
-      {isAdminOnly && (
-        <Shield className="ml-auto h-3 w-3 text-blue-500" />
-      )}
-    </Link>
-  );
-});
-NavItem.displayName = 'NavItem';
-
 // Memoized Today's Stats Component
 const TodayStats = memo(({ 
   todayPnL, 
   todayTradesCount, 
-  loading 
+  loading,
+  isOpen
 }: { 
   todayPnL: number; 
   todayTradesCount: number; 
   loading: boolean;
+  isOpen: boolean;
 }) => {
   const pnlDisplay = useMemo(() => {
     const formatted = todayPnL.toFixed(2);
@@ -180,34 +169,38 @@ const TodayStats = memo(({
     const isNegative = todayPnL < 0;
     
     if (isPositive) {
-      return { value: `+$${formatted}`, className: 'text-green-600 dark:text-green-400' };
+      return { value: `+$${formatted}`, className: 'text-green-400' };
     } else if (isNegative) {
-      return { value: `-$${Math.abs(todayPnL).toFixed(2)}`, className: 'text-red-600 dark:text-red-400' };
+      return { value: `-$${Math.abs(todayPnL).toFixed(2)}`, className: 'text-red-400' };
     }
-    return { value: '$0.00', className: 'text-gray-600 dark:text-gray-400' };
+    return { value: '$0.00', className: 'text-[var(--color-sidebar-foreground)]/70' };
   }, [todayPnL]);
 
+  if (!isOpen) return null;
+
   return (
-    <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
-      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-        Today's Performance
-      </div>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-600 dark:text-gray-400">P&L:</span>
-          {loading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <span className={`text-xs font-medium ${pnlDisplay.className}`}>
-              {pnlDisplay.value}
-            </span>
-          )}
+    <div className="px-1.5 py-3 border-t border-[var(--color-sidebar-border)]">
+      <div className="px-3">
+        <div className="text-[11px] font-medium text-[var(--color-sidebar-foreground)]/70 uppercase tracking-wider mb-2">
+          Today's Performance
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-600 dark:text-gray-400">Trades:</span>
-          <span className="text-xs font-medium text-gray-900 dark:text-white">
-            {todayTradesCount}
-          </span>
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-[var(--color-sidebar-foreground)]/70">P&L:</span>
+            {loading ? (
+              <Loader2 className="h-3 w-3 animate-spin text-[var(--color-sidebar-foreground)]/70" />
+            ) : (
+              <span className={cn('font-semibold', pnlDisplay.className)}>
+                {pnlDisplay.value}
+              </span>
+            )}
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-[var(--color-sidebar-foreground)]/70">Trades:</span>
+            <span className="font-semibold text-[var(--color-sidebar-foreground)]">
+              {todayTradesCount}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -216,26 +209,79 @@ const TodayStats = memo(({
 TodayStats.displayName = 'TodayStats';
 
 // Memoized Sign Out Button Component
-const SignOutButton = memo(({ onSignOut }: { onSignOut: () => void }) => (
-  <div className="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
-    <Button
-      variant="outline"
-      className="w-full bg-red-500 text-white hover:bg-red-600"
-      onClick={onSignOut}
-    >
-      Sign Out
-    </Button>
-  </div>
-));
+const SignOutButton = memo(({ onSignOut, isOpen }: { 
+  onSignOut: () => void;
+  isOpen: boolean;
+}) => {
+  return (
+    <div className="px-1.5 py-2 pb-3 border-t border-[var(--color-sidebar-border)]">
+      <button
+        type="button"
+        className={cn(
+          'flex items-center gap-3 h-11 px-3 rounded-lg transition-all duration-300',
+          'text-sm font-medium',
+          'text-[var(--color-destructive)]/80 hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/15',
+          isOpen ? 'w-full opacity-100' : 'w-11 opacity-0 pointer-events-none'
+        )}
+        onClick={onSignOut}
+      >
+        <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
+        <span className="whitespace-nowrap">Sign Out</span>
+      </button>
+    </div>
+  );
+});
 SignOutButton.displayName = 'SignOutButton';
 
 export const Sidebar = memo(() => {
+  const { isOpen, toggle, setOpen } = useSidebarStore();
   const isMobileMenuOpen = useUIStore((state) => state.isMobileMenuOpen);
   const openMobileMenu = useUIStore((state) => state.openMobileMenu);
   const closeMobileMenu = useUIStore((state) => state.closeMobileMenu);
   const pathname = usePathname();
   const { user, hasPermission, permissions, signOut } = useAuth();
   const { todayPnL, todayTradesCount, loading } = useTodayStats();
+  const { resolvedTheme } = useTheme();
+
+  // Initialize and update CSS variable for layout padding
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    
+    const updateSidebarWidth = () => {
+      const isMobileView = window.innerWidth < 1024;
+      if (isMobileView) {
+        document.documentElement.style.setProperty('--sidebar-width', '0px');
+      } else {
+        document.documentElement.style.setProperty(
+          '--sidebar-width', 
+          isOpen ? '240px' : '76px'
+        );
+      }
+    };
+
+    // Initialize on mount
+    updateSidebarWidth();
+  }, [isOpen]);
+
+  // Handle window resize
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const handleResize = () => {
+      const isMobileView = window.innerWidth < 1024;
+      if (isMobileView) {
+        document.documentElement.style.setProperty('--sidebar-width', '0px');
+      } else {
+        document.documentElement.style.setProperty(
+          '--sidebar-width', 
+          isOpen ? '240px' : '76px'
+        );
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen]);
 
   // Memoize user data
   const userData = useMemo(() => ({
@@ -243,7 +289,7 @@ export const Sidebar = memo(() => {
     displayName: user?.user_metadata?.display_name,
   }), [user?.email, user?.user_metadata?.display_name]);
 
-  // Memoize filtered navigation - include permissions in dependency array for role consistency
+  // Memoize filtered navigation
   const visibleNavigation = useMemo(() => 
     navigation.filter(item => !item.permission || hasPermission(item.permission)),
     [hasPermission, permissions]
@@ -271,6 +317,10 @@ export const Sidebar = memo(() => {
     globalThis.location.href = '/';
   }, [signOut]);
 
+  const handleToggle = useCallback(() => {
+    toggle();
+  }, [toggle]);
+
   const handleMobileMenuOpen = useCallback(() => {
     openMobileMenu();
   }, [openMobileMenu]);
@@ -283,25 +333,46 @@ export const Sidebar = memo(() => {
     closeMobileMenu();
   }, [closeMobileMenu]);
 
+  const handleNavClick = useCallback(() => {
+    // Close mobile menu when navigating
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      closeMobileMenu();
+    }
+  }, [closeMobileMenu]);
+
+  // Reactive mobile detection
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Button
-          variant="outline"
-          size="sm"
+      <div className="lg:hidden fixed top-5 left-5 z-[60]">
+        <button
+          type="button"
           onClick={handleMobileMenuOpen}
-          className="bg-white dark:bg-gray-800"
+          className="h-10 w-10 flex items-center justify-center rounded-lg bg-black/20 dark:bg-white/10 backdrop-blur-md border border-white/10 dark:border-gray-700/50 text-gray-100 dark:text-gray-100 hover:bg-black/30 dark:hover:bg-white/20 transition-colors"
         >
-          <Menu className="h-4 w-4" />
-        </Button>
+          <Menu className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Mobile menu overlay */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && isMobile && (
         <button
           type="button"
-          className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50 border-0 p-0 cursor-pointer"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm border-0 p-0 cursor-pointer"
           onClick={handleOverlayClick}
           onKeyDown={(e) => {
             if (e.key === 'Escape') handleOverlayClick();
@@ -311,50 +382,95 @@ export const Sidebar = memo(() => {
       )}
 
       {/* Sidebar */}
-      <div
+      <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0',
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          'fixed z-30 top-5 left-5 bottom-5 rounded-[14px] overflow-hidden',
+          'bg-[var(--color-sidebar)] backdrop-blur-md',
+          'border border-[var(--color-sidebar-border)]',
+          'shadow-xl shadow-black/20',
+          'transition-all duration-300 ease-out',
+          'w-14',
+          isOpen && 'w-[220px]',
+          // Mobile styles
+          'lg:block',
+          isMobile && 'top-0 left-0 bottom-0 rounded-none w-[280px]',
+          isMobile && 'transform transition-transform duration-300',
+          isMobile && (!isMobileMenuOpen ? '-translate-x-full' : 'translate-x-0'),
+          // Scrollbar styling
+          '[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:bg-transparent',
+          '[&::-webkit-scrollbar-thumb]:bg-[var(--color-sidebar-accent)] [&::-webkit-scrollbar-thumb]:rounded-full',
+          '[&::-webkit-scrollbar-thumb]:hover:bg-[var(--color-sidebar-accent-foreground)]'
         )}
       >
-        {/* Header */}
-        <SidebarHeader onClose={handleMobileMenuClose} />
-
-        {/* User info */}
-        <UserInfo email={userData.email} displayName={userData.displayName} />
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          {allNavigation.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== '/dashboard' && pathname.startsWith(item.href));
-            const isAdminOnly = adminHrefs.has(item.href);
-            
-            return (
-              <NavItem
-                key={item.href}
-                item={item}
-                isActive={isActive}
-                isAdminOnly={isAdminOnly}
-                onClose={handleMobileMenuClose}
+        <div className="absolute top-0 left-0 w-[220px] h-full flex flex-col overflow-y-auto overflow-x-hidden">
+          {/* Header */}
+          <header className="flex items-center h-16 px-1.5 gap-3">
+            <button
+              type="button"
+              className="h-11 w-11 grid place-items-center rounded-lg text-[var(--color-sidebar-foreground)] hover:bg-[var(--color-sidebar-accent)] transition-colors"
+              onClick={handleToggle}
+              aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            >
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+            <div
+              className={cn(
+                'flex items-center gap-2 transition-opacity duration-250',
+                isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              )}
+            >
+              <ForexJournalIcon 
+                size={18}
+                className="h-[18px] w-[18px]"
               />
-            );
-          })}
-        </nav>
+              <span className="text-sm font-semibold text-[var(--color-sidebar-foreground)] whitespace-nowrap">
+                FX Journal
+              </span>
+            </div>
+          </header>
 
-        {/* Today's Stats */}
-        <TodayStats 
-          todayPnL={todayPnL} 
-          todayTradesCount={todayTradesCount} 
-          loading={loading} 
-        />
+          {/* Navigation */}
+          <nav className="flex-1 flex flex-col px-1.5 py-2 gap-0.5 overflow-y-auto">
+            {allNavigation.map((item) => {
+              const isActive = pathname === item.href || 
+                (item.href !== '/dashboard' && pathname.startsWith(item.href));
+              const isAdminOnly = adminHrefs.has(item.href);
+              
+              return (
+                <NavItem
+                  key={item.href}
+                  item={item}
+                  isActive={isActive}
+                  isAdminOnly={isAdminOnly}
+                  isOpen={isOpen}
+                  onClick={handleNavClick}
+                />
+              );
+            })}
+          </nav>
 
-        {/* Sign out */}
-        <div className="text-black">
-                  <SignOutButton onSignOut={handleSignOut}/>
+          {/* User info */}
+          <UserInfo 
+            email={userData.email} 
+            displayName={userData.displayName}
+            isOpen={isOpen}
+          />
+
+          {/* Today's Stats */}
+          <TodayStats 
+            todayPnL={todayPnL} 
+            todayTradesCount={todayTradesCount} 
+            loading={loading}
+            isOpen={isOpen}
+          />
+
+          {/* Sign out */}
+          <SignOutButton 
+            onSignOut={handleSignOut}
+            isOpen={isOpen}
+          />
         </div>
-
-      </div>
+      </aside>
     </>
   );
 });

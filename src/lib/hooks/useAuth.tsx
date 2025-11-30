@@ -230,6 +230,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error) throw error;
 
+      // Check if email is confirmed
+      if (data.user && !data.user.email_confirmed_at) {
+        // Sign out the user immediately if email is not confirmed
+        await supabase.auth.signOut();
+        throw new Error('Please confirm your email address before signing in. Check your inbox for the confirmation link.');
+      }
+
       if (data.user) {
         await loadUserRoleAndPermissions(data.user.id);
       }
@@ -251,7 +258,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         options: {
           data: {
             display_name: displayName,
+            role: 'user', // Ensure role is set to 'user' for new signups
           },
+          emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
         },
       });
 

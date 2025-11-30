@@ -74,6 +74,7 @@ export const EditTradeModal = memo(({ trade, isOpen, onClose, onTradeUpdated }: 
         take_profit: trade.take_profit,
         entry_date: trade.entry_date ? trade.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
         exit_date: trade.exit_date ? trade.exit_date.split('T')[0] : undefined,
+        profit_loss: trade.profit_loss !== null && trade.profit_loss !== undefined ? trade.profit_loss : undefined,
         strategy: trade.strategy || '',
         setup: trade.setup || '',
         notes: trade.notes || '',
@@ -187,7 +188,7 @@ export const EditTradeModal = memo(({ trade, isOpen, onClose, onTradeUpdated }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!w-[62vw] !h-[90vh] !max-w-none sm:!max-w-none overflow-y-auto">
         <ModalHeader symbol={headerInfo.symbol} status={headerInfo.status} />
         
         <div className="mt-4">
