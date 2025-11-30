@@ -666,8 +666,6 @@ export interface Database {
           settings_updated_at: string | null
         }
       }
-    }
-    Views: {
       profile_with_subscription: {
         Row: {
           // All profiles columns
