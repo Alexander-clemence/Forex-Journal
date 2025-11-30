@@ -12,17 +12,12 @@ export async function GET(request: Request) {
     
     if (!error && data.user) {
       // Email confirmed successfully
-      // Check if this is a new user (first time confirming)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .eq('id', data.user.id)
-        .single();
-      
-      // If profile was just created (within last minute), show welcome message
-      if (profile?.created_at) {
-        const profileAge = Date.now() - new Date(profile.created_at).getTime();
-        if (profileAge < 60000) { // Created within last minute
+      // Check if this is a new user (first time confirming email)
+      // Use user's created_at to determine if they're new
+      if (data.user.created_at) {
+        const userAge = Date.now() - new Date(data.user.created_at).getTime();
+        // If user was created within last 5 minutes, show welcome message
+        if (userAge < 300000) { // 5 minutes
           return NextResponse.redirect(new URL('/dashboard?welcome=trial', requestUrl.origin));
         }
       }
